@@ -1,20 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowUpRight,
+  BarChart3,
   Bell,
   BookOpen,
   Boxes,
   BrainCircuit,
   ChevronRight,
   Download,
+  FileText,
   LayoutDashboard,
   LineChart,
+  MessageSquare,
   Search,
   Send,
+  Settings,
   ShieldCheck,
+  Share2,
+  Upload,
   Wrench,
 } from "lucide-react";
-import thermalMap from "@/assets/thermal-map.jpg";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -27,11 +32,15 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { label: "Fleet Overview", icon: LayoutDashboard, active: true },
-  { label: "Asset Intelligence", icon: Boxes },
-  { label: "Knowledge Base", icon: BookOpen },
-  { label: "Workflows", icon: Wrench },
-  { label: "Safety Audit", icon: ShieldCheck },
+  { label: "Dashboard", icon: LayoutDashboard, active: true },
+  { label: "AI Assistant", icon: MessageSquare },
+  { label: "Knowledge Hub", icon: BookOpen },
+  { label: "Upload Documents", icon: Upload },
+  { label: "Knowledge Graph", icon: Share2 },
+  { label: "Compliance Center", icon: ShieldCheck },
+  { label: "Maintenance Intelligence", icon: Wrench },
+  { label: "Analytics", icon: BarChart3 },
+  { label: "Settings", icon: Settings },
 ];
 
 function Dashboard() {
