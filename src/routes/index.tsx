@@ -191,7 +191,7 @@ function PageHeader() {
             Shift · 08:00 – 20:00 UTC
           </span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Operational Health</h1>
+        <h1 className="text-2xl font-bold tracking-tight">IndusBrain Dashboard</h1>
         <p className="text-muted-foreground text-sm">
           Real-time synthesis of sensor telemetry, maintenance logs, and 20+ years of
           plant documentation.
@@ -222,42 +222,50 @@ type Kpi = {
 
 const KPIS: Kpi[] = [
   {
-    label: "Throughput",
-    value: "1,242",
-    delta: "+4.2%",
+    label: "Total Knowledge Documents",
+    value: "12,480",
+    delta: "+184",
     deltaTone: "positive",
-    sub: "units / hour",
-    spark: [30, 34, 32, 38, 42, 39, 45, 48, 46, 52, 55, 58],
+    sub: "indexed this week",
+    spark: [30, 34, 38, 42, 45, 50, 54, 58, 62, 66, 70, 74],
   },
   {
-    label: "Active Anomalies",
-    value: "03",
-    delta: "Stable",
-    deltaTone: "neutral",
-    sub: "requiring attention",
-    spark: [40, 42, 38, 44, 43, 41, 40, 39, 42, 41, 40, 40],
-  },
-  {
-    label: "OEE Score",
-    value: "88.4%",
-    delta: "↑ 1.6",
+    label: "Total Assets",
+    value: "3,214",
+    delta: "+12",
     deltaTone: "positive",
-    sub: "Target 92.0%",
-    spark: [60, 62, 61, 64, 66, 65, 68, 70, 72, 71, 74, 76],
+    sub: "across 8 sites",
+    spark: [50, 52, 54, 55, 57, 58, 60, 62, 64, 65, 67, 68],
   },
   {
-    label: "AI Confidence",
-    value: "99.2%",
-    delta: "14k signals",
-    deltaTone: "neutral",
-    sub: "past 24h",
-    spark: [70, 71, 73, 72, 74, 75, 76, 78, 77, 79, 80, 82],
+    label: "Compliance Score",
+    value: "96.4%",
+    delta: "↑ 0.8",
+    deltaTone: "positive",
+    sub: "ISO 55000 · IEC 61511",
+    spark: [70, 72, 74, 73, 75, 76, 78, 79, 80, 82, 83, 84],
+  },
+  {
+    label: "Pending Maintenance",
+    value: "27",
+    delta: "5 overdue",
+    deltaTone: "warning",
+    sub: "work orders open",
+    spark: [22, 24, 26, 25, 28, 30, 28, 26, 27, 29, 28, 27],
+  },
+  {
+    label: "AI Queries Today",
+    value: "1,842",
+    delta: "+14%",
+    deltaTone: "positive",
+    sub: "avg 2.1s response",
+    spark: [40, 45, 50, 55, 58, 62, 66, 70, 74, 78, 82, 88],
   },
 ];
 
 function KpiRow() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
       {KPIS.map((kpi) => (
         <KpiCard key={kpi.label} kpi={kpi} />
       ))}
