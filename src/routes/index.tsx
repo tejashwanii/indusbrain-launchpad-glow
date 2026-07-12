@@ -60,7 +60,7 @@ function Dashboard() {
             <div className="space-y-6">
               <CriticalComponents />
               <KnowledgeBaseCard />
-              <ThermalMapCard />
+              <KnowledgeGraphPreview />
             </div>
           </div>
         </div>
@@ -754,7 +754,7 @@ function KnowledgeBaseCard() {
       <div className="relative">
         <div className="flex items-center gap-2">
           <BrainCircuit className="size-4 text-brand-accent" />
-          <h3 className="text-sm font-bold">Ask the Knowledge Base</h3>
+          <h3 className="text-sm font-bold">Ask IndusBrain AI</h3>
         </div>
         <p className="text-xs text-slate-400 mt-2 mb-4 leading-relaxed">
           Query 20+ years of plant documentation, maintenance logs, and blueprints via
@@ -796,30 +796,146 @@ function KnowledgeBaseCard() {
   );
 }
 
-function ThermalMapCard() {
+function KnowledgeGraphPreview() {
+  // Node graph: central IndusBrain node with domain clusters
+  const width = 400;
+  const height = 400;
+  const cx = width / 2;
+  const cy = height / 2;
+
+  type Node = { id: string; label: string; x: number; y: number; r: number; tone: "core" | "primary" | "accent" | "muted" };
+  const nodes: Node[] = [
+    { id: "core", label: "IndusBrain", x: cx, y: cy, r: 26, tone: "core" },
+    { id: "assets", label: "Assets", x: cx - 130, y: cy - 90, r: 16, tone: "primary" },
+    { id: "sops", label: "SOPs", x: cx + 130, y: cy - 90, r: 16, tone: "primary" },
+    { id: "compliance", label: "Compliance", x: cx + 140, y: cy + 70, r: 16, tone: "accent" },
+    { id: "maint", label: "Maintenance", x: cx - 140, y: cy + 80, r: 16, tone: "primary" },
+    { id: "sensors", label: "Sensors", x: cx, y: cy - 140, r: 12, tone: "muted" },
+    { id: "docs", label: "Documents", x: cx, y: cy + 140, r: 12, tone: "muted" },
+    { id: "vendors", label: "Vendors", x: cx - 165, y: cy - 10, r: 11, tone: "muted" },
+    { id: "incidents", label: "Incidents", x: cx + 165, y: cy - 10, r: 11, tone: "muted" },
+  ];
+  const edges: [string, string][] = [
+    ["core", "assets"], ["core", "sops"], ["core", "compliance"],
+    ["core", "maint"], ["core", "sensors"], ["core", "docs"],
+    ["core", "vendors"], ["core", "incidents"],
+    ["assets", "sensors"], ["assets", "maint"], ["sops", "compliance"],
+    ["maint", "incidents"], ["sops", "docs"], ["compliance", "docs"],
+  ];
+  const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const fillFor = (tone: Node["tone"]) =>
+    tone === "core"
+      ? "var(--brand-deep)"
+      : tone === "primary"
+      ? "var(--brand-primary)"
+      : tone === "accent"
+      ? "var(--brand-accent)"
+      : "var(--card)";
+  const strokeFor = (tone: Node["tone"]) =>
+    tone === "muted" ? "var(--border-subtle)" : fillFor(tone);
+  const textFill = (tone: Node["tone"]) =>
+    tone === "muted" ? "var(--brand-deep)" : "#ffffff";
+
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
+      <header className="p-4 border-b border-border-subtle flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Share2 className="size-4 text-brand-primary" />
+          <h3 className="font-bold text-sm">Knowledge Graph Preview</h3>
+        </div>
+        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          12.4k nodes · 48k edges
+        </span>
+      </header>
       <div className="relative">
-        <img
-          src={thermalMap}
-          alt="Thermal map of turbine and hydraulic components"
-          width={800}
-          height={800}
-          loading="lazy"
-          className="w-full aspect-square object-cover"
-        />
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full aspect-square"
+          role="img"
+          aria-label="Knowledge graph preview showing IndusBrain domain clusters"
+        >
+          <defs>
+            <pattern id="kg-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+              <path
+                d="M 24 0 L 0 0 0 24"
+                fill="none"
+                stroke="var(--border-subtle)"
+                strokeWidth="0.5"
+                opacity="0.6"
+              />
+            </pattern>
+            <radialGradient id="kg-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <rect width={width} height={height} fill="url(#kg-grid)" />
+          <circle cx={cx} cy={cy} r={150} fill="url(#kg-glow)" />
+
+          {edges.map(([a, b], i) => {
+            const na = byId[a];
+            const nb = byId[b];
+            return (
+              <line
+                key={i}
+                x1={na.x}
+                y1={na.y}
+                x2={nb.x}
+                y2={nb.y}
+                stroke="var(--brand-primary)"
+                strokeOpacity="0.35"
+                strokeWidth="1"
+              />
+            );
+          })}
+
+          {nodes.map((n) => (
+            <g key={n.id}>
+              <circle
+                cx={n.x}
+                cy={n.y}
+                r={n.r}
+                fill={fillFor(n.tone)}
+                stroke={strokeFor(n.tone)}
+                strokeWidth={n.tone === "muted" ? 1.5 : 2}
+              />
+              {n.tone === "core" && (
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r={n.r + 6}
+                  fill="none"
+                  stroke="var(--brand-primary)"
+                  strokeOpacity="0.4"
+                  strokeDasharray="3 3"
+                />
+              )}
+              <text
+                x={n.x}
+                y={n.y + 3}
+                textAnchor="middle"
+                fontSize={n.tone === "core" ? 10 : 9}
+                fontFamily="var(--font-mono)"
+                fontWeight={n.tone === "core" ? 700 : 500}
+                fill={textFill(n.tone)}
+              >
+                {n.label}
+              </text>
+            </g>
+          ))}
+        </svg>
         <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-brand-deep via-brand-deep/70 to-transparent text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-mono uppercase tracking-widest text-slate-300">
-                Thermal Map · Unit 4B
+                Live domain graph
               </p>
               <p className="text-sm font-semibold mt-0.5">
-                Peak 214°F · Bearing housing
+                8 core domains · updated 2m ago
               </p>
             </div>
             <button className="text-[10px] font-bold uppercase tracking-wider bg-white/10 border border-white/15 backdrop-blur px-2.5 py-1.5 rounded-md hover:bg-white/20 transition-colors">
-              Inspect
+              Explore
             </button>
           </div>
         </div>
