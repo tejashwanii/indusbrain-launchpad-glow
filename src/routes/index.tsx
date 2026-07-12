@@ -281,7 +281,7 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
       ? "text-brand-accent"
       : "text-muted-foreground";
   const valueClass =
-    kpi.label === "Active Anomalies" ? "text-brand-accent" : "text-brand-deep";
+    kpi.label === "Pending Maintenance" ? "text-brand-accent" : "text-brand-deep";
 
   return (
     <div className="bg-card p-5 rounded-xl border border-border-subtle shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
@@ -298,7 +298,7 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
       <p className="text-[10px] text-muted-foreground mt-1 font-mono uppercase tracking-wider">
         {kpi.sub}
       </p>
-      <Sparkline points={kpi.spark} accent={kpi.label === "Active Anomalies"} />
+      <Sparkline points={kpi.spark} accent={kpi.label === "Pending Maintenance"} />
     </div>
   );
 }
