@@ -218,50 +218,50 @@ type Kpi = {
   spark: number[];
 };
 
-const KPIS: Kpi[] = [
-  {
-    label: "Total Knowledge Documents",
-    value: "12,480",
-    delta: "+184",
-    deltaTone: "positive",
-    sub: "indexed this week",
-    spark: [30, 34, 38, 42, 45, 50, 54, 58, 62, 66, 70, 74],
-  },
-  {
-    label: "Total Assets",
-    value: "3,214",
-    delta: "+12",
-    deltaTone: "positive",
-    sub: "across 8 sites",
-    spark: [50, 52, 54, 55, 57, 58, 60, 62, 64, 65, 67, 68],
-  },
-  {
-    label: "Compliance Score",
-    value: "96.4%",
-    delta: "↑ 0.8",
-    deltaTone: "positive",
-    sub: "ISO 55000 · IEC 61511",
-    spark: [70, 72, 74, 73, 75, 76, 78, 79, 80, 82, 83, 84],
-  },
-  {
-    label: "Pending Maintenance",
-    value: "27",
-    delta: "5 overdue",
-    deltaTone: "warning",
-    sub: "work orders open",
-    spark: [22, 24, 26, 25, 28, 30, 28, 26, 27, 29, 28, 27],
-  },
-  {
-    label: "AI Queries Today",
-    value: "1,842",
-    delta: "+14%",
-    deltaTone: "positive",
-    sub: "avg 2.1s response",
-    spark: [40, 45, 50, 55, 58, 62, 66, 70, 74, 78, 82, 88],
-  },
-];
-
 function KpiRow() {
+  const KPIS: Kpi[] = [
+    {
+      label: "Documents Indexed",
+      value: "18,420",
+      delta: "+248",
+      deltaTone: "positive",
+      sub: "across 14 knowledge domains",
+      spark: [30, 34, 38, 42, 45, 50, 54, 58, 62, 66, 70, 74],
+    },
+    {
+      label: "Registered Assets",
+      value: "3,214",
+      delta: "+12",
+      deltaTone: "positive",
+      sub: "across 8 sites",
+      spark: [50, 52, 54, 55, 57, 58, 60, 62, 64, 65, 67, 68],
+    },
+    {
+      label: "Compliance Score",
+      value: "96.8%",
+      delta: "↑ 0.6",
+      deltaTone: "positive",
+      sub: "ISO 55000 · IEC 61511",
+      spark: [70, 72, 74, 73, 75, 76, 78, 79, 80, 82, 83, 84],
+    },
+    {
+      label: "Pending Maintenance",
+      value: "27",
+      delta: "5 overdue",
+      deltaTone: "warning",
+      sub: "work orders open",
+      spark: [22, 24, 26, 25, 28, 30, 28, 26, 27, 29, 28, 27],
+    },
+    {
+      label: "AI Queries Today",
+      value: "1,842",
+      delta: "+14%",
+      deltaTone: "positive",
+      sub: "avg 2.1s response",
+      spark: [40, 45, 50, 55, 58, 62, 66, 70, 74, 78, 82, 88],
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
       {KPIS.map((kpi) => (
@@ -357,27 +357,27 @@ type FeedItem = {
 const FEED: FeedItem[] = [
   {
     kind: "AI",
-    title: "Predictive Alert · Hydraulic Pump H1-2",
-    body: "Vibration patterns match signature 0xFF4 (Bearing Wear). Maintenance suggested within 48 operational hours to avoid catastrophic downtime.",
+    title: "AI Insight · Hydraulic Pump H1-2",
+    body: "IndusBrain linked recent maintenance history and SOP guidance to recommend an inspection sequence for bearing wear and seal replacement within 48 hours.",
     time: "14:22 UTC · Line 4A",
     severity: "critical",
     actions: [
-      { label: "Schedule Inspection", primary: true },
-      { label: "View Sensor Logs" },
+      { label: "Schedule Review", primary: true },
+      { label: "Open Related Documents" },
     ],
   },
   {
     kind: "AI",
     title: "Knowledge Match · SOP-2145",
-    body: "Copilot linked incident #8842 to Standard Operating Procedure 2145 (Rev. 7). Recommended isolation sequence attached.",
+    body: "Copilot connected incident #8842 to Standard Operating Procedure 2145 (Rev. 7) and surfaced the recommended isolation sequence for operators.",
     time: "13:47 UTC · Rotterdam",
     severity: "warning",
     actions: [{ label: "Open Procedure", primary: true }, { label: "Dismiss" }],
   },
   {
     kind: "LOG",
-    title: "System Optimization Update",
-    body: "AI recalibrated cooling cycle for Unit 4B based on ambient humidity shifts. Energy efficiency improved by 2.1%.",
+    title: "Knowledge Update",
+    body: "AI synthesized recent operating notes and documentation for Unit 4B to recommend a cooling-cycle adjustment based on humidity patterns and prior OEM guidance.",
     time: "12:10 UTC · Auto",
     severity: "info",
   },
@@ -467,9 +467,9 @@ function TelemetryChart() {
   const innerH = height - padT - padB;
 
   // 25 points across 24h
-  const throughput = [58, 60, 61, 64, 66, 68, 70, 72, 74, 71, 76, 78, 74, 70, 66, 68, 72, 76, 80, 82, 79, 74, 70, 68, 66];
-  const pressure = [52, 55, 54, 58, 60, 63, 61, 66, 70, 68, 66, 60, 55, 62, 66, 70, 68, 64, 60, 62, 66, 63, 60, 58, 56];
-  const vibration = [22, 24, 21, 25, 27, 26, 28, 30, 32, 34, 30, 28, 26, 27, 29, 45, 60, 42, 32, 30, 28, 27, 26, 24, 23];
+  const aiQuestions = [38, 42, 45, 48, 52, 54, 58, 62, 66, 64, 68, 72, 70, 66, 62, 64, 70, 72, 74, 76, 74, 70, 66, 62, 60];
+  const documentsRetrieved = [44, 46, 48, 51, 54, 56, 58, 61, 63, 60, 64, 68, 66, 62, 60, 63, 66, 70, 72, 74, 72, 69, 66, 63, 61];
+  const successfulResponses = [72, 74, 76, 78, 80, 82, 84, 83, 85, 86, 87, 88, 87, 86, 84, 85, 86, 88, 90, 91, 90, 89, 87, 86, 84];
 
   const toPath = (arr: number[]) => {
     const step = innerW / (arr.length - 1);
@@ -485,8 +485,8 @@ function TelemetryChart() {
   const gridLines = [0, 25, 50, 75, 100];
   const hours = ["00", "04", "08", "12", "16", "20", "24"];
 
-  // anomaly at index 15-16
-  const step = innerW / (vibration.length - 1);
+  // peak demand window
+  const step = innerW / (successfulResponses.length - 1);
   const anomalyX = padL + 15 * step;
 
   return (
@@ -494,12 +494,12 @@ function TelemetryChart() {
       <header className="p-4 border-b border-border-subtle flex flex-wrap gap-3 justify-between items-center">
         <div className="flex items-center gap-2">
           <LineChart className="size-4 text-brand-primary" />
-          <h2 className="font-bold text-sm">Real-time Telemetry · Line 4A</h2>
+          <h2 className="font-bold text-sm">AI Query Trends</h2>
         </div>
         <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider">
-          <Legend color="var(--brand-primary)" label="Throughput" />
-          <Legend color="var(--brand-deep)" label="Pressure" />
-          <Legend color="var(--brand-accent)" label="Vibration" dashed />
+          <Legend color="var(--brand-primary)" label="AI Questions" />
+          <Legend color="var(--brand-deep)" label="Documents Retrieved" />
+          <Legend color="var(--brand-accent)" label="Successful Responses" dashed />
           <div className="flex gap-1 ml-2">
             {["24H", "7D", "30D"].map((t, i) => (
               <button
@@ -522,7 +522,7 @@ function TelemetryChart() {
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-64"
           role="img"
-          aria-label="Telemetry chart: throughput, pressure, and vibration over 24 hours"
+          aria-label="AI query trends chart showing questions, retrieved documents, and successful responses over 24 hours"
         >
           <defs>
             <linearGradient id="tp-fill" x1="0" x2="0" y1="0" y2="1">
@@ -558,7 +558,7 @@ function TelemetryChart() {
             );
           })}
 
-          {/* anomaly band */}
+          {/* peak demand band */}
           <rect
             x={anomalyX - step * 0.5}
             y={padT}
@@ -577,15 +577,15 @@ function TelemetryChart() {
             opacity="0.6"
           />
 
-          {/* Throughput area + line */}
+          {/* AI Questions area + line */}
           <path
-            d={`${toPath(throughput)} L${width - padR},${padT + innerH} L${padL},${
+            d={`${toPath(aiQuestions)} L${width - padR},${padT + innerH} L${padL},${
               padT + innerH
             } Z`}
             fill="url(#tp-fill)"
           />
           <path
-            d={toPath(throughput)}
+            d={toPath(aiQuestions)}
             fill="none"
             stroke="var(--brand-primary)"
             strokeWidth="2"
@@ -593,28 +593,28 @@ function TelemetryChart() {
             style={{ ["--dash-len" as string]: "2400" }}
           />
 
-          {/* Pressure line */}
+          {/* Documents Retrieved line */}
           <path
-            d={toPath(pressure)}
+            d={toPath(documentsRetrieved)}
             fill="none"
             stroke="var(--brand-deep)"
             strokeWidth="1.5"
             opacity="0.85"
           />
 
-          {/* Vibration line (dashed) */}
+          {/* Successful Responses line (dashed) */}
           <path
-            d={toPath(vibration)}
+            d={toPath(successfulResponses)}
             fill="none"
             stroke="var(--brand-accent)"
             strokeWidth="1.75"
             strokeDasharray="4 3"
           />
 
-          {/* Anomaly marker dot */}
+          {/* Peak marker dot */}
           <circle
             cx={anomalyX}
-            cy={padT + innerH - (60 / 100) * innerH}
+            cy={padT + innerH - (76 / 100) * innerH}
             r="4"
             fill="var(--brand-accent)"
             stroke="white"
@@ -642,7 +642,7 @@ function TelemetryChart() {
 
         <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3 text-[11px] font-mono">
           <span className="text-muted-foreground">
-            Anomaly detected · 15:00 UTC · vibration spike +82% above baseline
+            Peak demand · 15:00 UTC · 76 questions/minute with 91% success rate
           </span>
           <button className="text-brand-primary font-semibold hover:underline">
             Investigate →
@@ -687,18 +687,18 @@ const COMPONENTS: {
   health: number;
   tone: "ok" | "warn" | "crit";
 }[] = [
-  { name: "Turbine 01", location: "North Bay", metric: "4,208 RPM", health: 100, tone: "ok" },
-  { name: "Conveyor Motor", location: "Line 4A", metric: "122 A", health: 92, tone: "ok" },
-  { name: "Main Compressor", location: "Utilities", metric: "6.4 bar", health: 45, tone: "warn" },
-  { name: "Hydraulic Pump H1-2", location: "Line 4A", metric: "0.72 ips", health: 28, tone: "crit" },
-  { name: "Heat Exchanger E-03", location: "Refinery", metric: "142°F", health: 88, tone: "ok" },
+  { name: "Hydraulic Pump H1-2", location: "Line 4A", metric: "4,208 RPM", health: 100, tone: "ok" },
+  { name: "Cooling Tower", location: "Utilities", metric: "122 A", health: 92, tone: "ok" },
+  { name: "Steam Turbine", location: "North Bay", metric: "6.4 bar", health: 45, tone: "warn" },
+  { name: "Boiler Unit", location: "Refinery", metric: "0.72 ips", health: 28, tone: "crit" },
+  { name: "Main Compressor", location: "Line 4A", metric: "142°F", health: 88, tone: "ok" },
 ];
 
 function CriticalComponents() {
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm">Critical Components</h3>
+        <h3 className="font-bold text-sm">Most Referenced Assets</h3>
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
           Fleet · 42
         </span>
