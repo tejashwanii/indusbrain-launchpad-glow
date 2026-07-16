@@ -360,7 +360,7 @@ function FloatingAIAssistant({
         type="button"
         onClick={() => onOpenChange(true)}
         aria-label="Open AI Assistant"
-        className="fixed bottom-5 left-5 z-40 inline-flex items-center gap-2 rounded-full pl-3 pr-4 py-2.5 bg-brand-deep text-white shadow-lg shadow-brand-deep/25 ring-1 ring-white/10 backdrop-blur hover:bg-brand-deep/90 hover:shadow-xl transition-all"
+        className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full pl-3 pr-4 py-2.5 bg-brand-deep text-white shadow-lg shadow-brand-deep/25 ring-1 ring-white/10 backdrop-blur hover:bg-brand-deep/90 hover:shadow-xl transition-all sm:bottom-6 sm:right-6"
       >
         <span className="grid place-items-center size-7 rounded-full bg-brand-primary/90 shadow-inner">
           <Sparkles className="size-3.5" />
