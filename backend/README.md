@@ -26,3 +26,7 @@ Local CORS is configured for the standard Vite and common frontend development p
 ## Configuration
 
 Copy `.env.example` to `.env` before adding local configuration. Settings are loaded with `pydantic-settings` and are available throughout the application as `app.core.config.settings`.
+
+## Document uploads
+
+`POST /upload` accepts a multipart form field named `file` containing a PDF. Files are stored in `UPLOAD_DIRECTORY`, subject to the `MAX_UPLOAD_SIZE` byte limit. Uploads are stored only; no OCR or document processing runs yet.
