@@ -1,22 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   BarChart3,
   Bell,
   BookOpen,
   BrainCircuit,
+  ChevronLeft,
   ChevronRight,
   Download,
   LayoutDashboard,
   LineChart,
-  MessageSquare,
+  PanelLeft,
   Search,
   Send,
   Settings,
   ShieldCheck,
   Share2,
+  Sparkles,
   Upload,
   Wrench,
+  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -24,127 +28,289 @@ export const Route = createFileRoute("/")({
 });
 
 type NavItem = {
+  id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  active?: boolean;
 };
 
 const NAV: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
-  { label: "AI Assistant", icon: MessageSquare },
-  { label: "Knowledge Hub", icon: BookOpen },
-  { label: "Upload Documents", icon: Upload },
-  { label: "Knowledge Graph", icon: Share2 },
-  { label: "Compliance Center", icon: ShieldCheck },
-  { label: "Maintenance Intelligence", icon: Wrench },
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Settings", icon: Settings },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "knowledge-hub", label: "Knowledge Hub", icon: BookOpen },
+  { id: "upload-documents", label: "Upload Documents", icon: Upload },
+  { id: "knowledge-graph", label: "Knowledge Graph", icon: Share2 },
+  { id: "compliance", label: "Compliance Center", icon: ShieldCheck },
+  { id: "maintenance", label: "Maintenance Intelligence", icon: Wrench },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 function Dashboard() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [active, setActive] = useState("dashboard");
+  const [aiOpen, setAiOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll spy
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const els = NAV.map((n) => document.getElementById(n.id)).filter(
+      (el): el is HTMLElement => !!el,
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { root, rootMargin: "-20% 0px -55% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActive(id);
+    setMobileOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex bg-surface-muted text-brand-deep font-sans">
-      <Sidebar />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+        active={active}
+        onNavigate={scrollTo}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
       <main className="flex-1 flex flex-col min-w-0">
-        <Topbar />
-        <div className="p-8 space-y-6 overflow-y-auto">
-          <PageHeader />
-          <KpiRow />
+        <Topbar onOpenMobileNav={() => setMobileOpen(true)} />
+        <div
+          ref={scrollRef}
+          className="p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto max-h-[calc(100vh-4rem)]"
+        >
+          <section id="dashboard" className="space-y-6 scroll-mt-4">
+            <PageHeader />
+            <KpiRow />
+          </section>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <div className="xl:col-span-2 space-y-6">
-              <AssetFeed />
-              <TelemetryChart />
+            <div className="xl:col-span-2 space-y-6 min-w-0">
+              <section id="maintenance" className="scroll-mt-4">
+                <AssetFeed />
+              </section>
+              <section id="analytics" className="scroll-mt-4">
+                <TelemetryChart />
+              </section>
             </div>
-            <div className="space-y-6">
-              <CriticalComponents />
-              <KnowledgeBaseCard />
-              <KnowledgeGraphPreview />
+            <div className="space-y-6 min-w-0">
+              <section id="knowledge-hub" className="scroll-mt-4">
+                <CriticalComponents />
+              </section>
+              <section id="knowledge-graph" className="scroll-mt-4">
+                <KnowledgeGraphPreview />
+              </section>
             </div>
           </div>
+          <section id="upload-documents" className="scroll-mt-4">
+            <UploadDocumentsCard />
+          </section>
+          <section id="compliance" className="scroll-mt-4">
+            <ComplianceCard />
+          </section>
+          <section id="settings" className="scroll-mt-4">
+            <SettingsCard />
+          </section>
         </div>
       </main>
+
+      <FloatingAIAssistant open={aiOpen} onOpenChange={setAiOpen} />
     </div>
   );
 }
 
-function Sidebar() {
+function Sidebar({
+  collapsed,
+  onToggle,
+  active,
+  onNavigate,
+  mobileOpen,
+  onCloseMobile,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  active: string;
+  onNavigate: (id: string) => void;
+  mobileOpen: boolean;
+  onCloseMobile: () => void;
+}) {
   return (
-    <aside className="w-64 shrink-0 border-r border-border-subtle bg-card flex flex-col">
-      <div className="p-6 border-b border-border-subtle flex items-center gap-3">
-        <div className="size-9 rounded-md bg-brand-primary text-brand-primary-foreground font-bold grid place-items-center tracking-tight">
-          IB
-        </div>
-        <div className="flex flex-col leading-tight">
-          <span className="font-bold text-lg tracking-tight">IndusBrain</span>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-            ops · v4.2
-          </span>
-        </div>
-      </div>
-
-      <nav className="p-4 space-y-1 flex-1">
-        {NAV.map((item) => {
-          const Icon = item.icon;
-          return (
-            <a
-              key={item.label}
-              href="#"
-              className={[
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                item.active
-                  ? "bg-brand-primary/5 text-brand-primary"
-                  : "text-muted-foreground hover:bg-secondary hover:text-brand-deep",
-              ].join(" ")}
+    <>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={onCloseMobile}
+          className="fixed inset-0 z-30 bg-brand-deep/40 backdrop-blur-sm lg:hidden"
+        />
+      )}
+      <aside
+        className={[
+          "shrink-0 border-r border-border-subtle bg-card flex flex-col transition-[width] duration-300 ease-in-out",
+          collapsed ? "w-16" : "w-64",
+          "fixed inset-y-0 left-0 z-40 lg:static",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          "transition-transform lg:transition-[width]",
+        ].join(" ")}
+      >
+        <div
+          className={[
+            "p-4 border-b border-border-subtle flex items-center gap-3",
+            collapsed ? "justify-center" : "justify-between",
+          ].join(" ")}
+        >
+          {!collapsed ? (
+            <>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="size-9 shrink-0 rounded-md bg-brand-primary text-brand-primary-foreground font-bold grid place-items-center tracking-tight">
+                  IB
+                </div>
+                <div className="flex flex-col leading-tight min-w-0">
+                  <span className="font-bold text-lg tracking-tight truncate">
+                    IndusBrain
+                  </span>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    ops · v4.2
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onToggle}
+                aria-label="Collapse sidebar"
+                className="size-8 hidden lg:grid place-items-center rounded-md hover:bg-secondary text-muted-foreground transition-colors"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onCloseMobile}
+                aria-label="Close navigation"
+                className="size-8 grid lg:hidden place-items-center rounded-md hover:bg-secondary text-muted-foreground transition-colors"
+              >
+                <X className="size-4" />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label="Expand sidebar"
+              className="size-9 rounded-md bg-brand-primary text-brand-primary-foreground font-bold grid place-items-center tracking-tight hover:bg-brand-primary/90 transition-colors"
+              title="Expand sidebar"
             >
-              <Icon className="size-4" />
-              <span>{item.label}</span>
-              {item.active && (
-                <span className="ml-auto size-1.5 rounded-full bg-brand-primary" />
-              )}
-            </a>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-border-subtle">
-        <div className="rounded-lg bg-brand-deep p-3 text-white">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-              AI Engine
-            </p>
-            <span className="size-2 rounded-full bg-brand-accent status-pulse" />
-          </div>
-          <p className="text-sm font-medium mt-1">Engine Optimal</p>
-          <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
-            14.2k signals / min
-          </p>
-          <div className="mt-2 h-1 w-full bg-slate-700/70 rounded-full overflow-hidden">
-            <div className="h-full bg-brand-accent w-3/4" />
-          </div>
+              IB
+            </button>
+          )}
         </div>
-      </div>
-    </aside>
+
+        <nav className={["space-y-1 flex-1", collapsed ? "p-2" : "p-4"].join(" ")}>
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const isActive = active === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                title={collapsed ? item.label : undefined}
+                aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                className={[
+                  "group relative w-full flex items-center rounded-md text-sm font-medium transition-colors",
+                  collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2",
+                  isActive
+                    ? "bg-brand-primary/5 text-brand-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-brand-deep",
+                ].join(" ")}
+              >
+                <Icon className="size-4 shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="truncate">{item.label}</span>
+                    {isActive && (
+                      <span className="ml-auto size-1.5 rounded-full bg-brand-primary" />
+                    )}
+                  </>
+                )}
+                {collapsed && (
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-full ml-2 z-50 whitespace-nowrap rounded-md bg-brand-deep px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {!collapsed && (
+          <div className="p-4 border-t border-border-subtle">
+            <div className="rounded-lg bg-brand-deep p-3 text-white">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
+                  AI Engine
+                </p>
+                <span className="size-2 rounded-full bg-brand-accent status-pulse" />
+              </div>
+              <p className="text-sm font-medium mt-1">Engine Optimal</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                14.2k signals / min
+              </p>
+              <div className="mt-2 h-1 w-full bg-slate-700/70 rounded-full overflow-hidden">
+                <div className="h-full bg-brand-accent w-3/4" />
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }
 
-function Topbar() {
+function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   return (
-    <header className="h-16 shrink-0 border-b border-border-subtle bg-card flex items-center justify-between px-8">
-      <div className="flex items-center gap-3 text-sm font-medium">
-        <span className="text-muted-foreground">Production Floor</span>
-        <ChevronRight className="size-3.5 text-slate-300" />
-        <span className="text-muted-foreground">Rotterdam Refinery</span>
-        <ChevronRight className="size-3.5 text-slate-300" />
-        <span className="text-brand-deep">Assembly Line 4A</span>
+    <header className="h-16 shrink-0 border-b border-border-subtle bg-card flex items-center justify-between px-4 sm:px-6 lg:px-8 gap-3">
+      <div className="flex items-center gap-3 text-sm font-medium min-w-0">
+        <button
+          type="button"
+          onClick={onOpenMobileNav}
+          aria-label="Open navigation"
+          className="size-9 grid lg:hidden place-items-center rounded-md hover:bg-secondary text-brand-deep transition-colors -ml-1"
+        >
+          <PanelLeft className="size-4" />
+        </button>
+        <span className="text-muted-foreground hidden sm:inline">Production Floor</span>
+        <ChevronRight className="size-3.5 text-slate-300 hidden sm:inline" />
+        <span className="text-muted-foreground hidden md:inline">Rotterdam Refinery</span>
+        <ChevronRight className="size-3.5 text-slate-300 hidden md:inline" />
+        <span className="text-brand-deep truncate">Assembly Line 4A</span>
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="relative">
+        <div className="relative hidden md:block">
           <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Ask IndusBrain — sensor, asset, procedure…"
-            className="pl-9 pr-16 py-1.5 bg-secondary rounded-full text-sm border-none focus:outline-none focus:ring-2 focus:ring-brand-primary/25 w-80 transition-all placeholder:text-muted-foreground"
+            className="pl-9 pr-16 py-1.5 bg-secondary rounded-full text-sm border-none focus:outline-none focus:ring-2 focus:ring-brand-primary/25 w-72 xl:w-80 transition-all placeholder:text-muted-foreground"
           />
           <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground bg-card border border-border-subtle rounded px-1.5 py-0.5">
             ⌘K
@@ -176,11 +342,109 @@ function Topbar() {
   );
 }
 
+function FloatingAIAssistant({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const suggestions = [
+    "Summarize today's critical alerts",
+    "Which assets need maintenance this week?",
+    "Show compliance gaps for ISO 55000",
+  ];
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => onOpenChange(true)}
+        aria-label="Open AI Assistant"
+        className="fixed bottom-5 left-5 z-40 inline-flex items-center gap-2 rounded-full pl-3 pr-4 py-2.5 bg-brand-deep text-white shadow-lg shadow-brand-deep/25 ring-1 ring-white/10 backdrop-blur hover:bg-brand-deep/90 hover:shadow-xl transition-all"
+      >
+        <span className="grid place-items-center size-7 rounded-full bg-brand-primary/90 shadow-inner">
+          <Sparkles className="size-3.5" />
+        </span>
+        <span className="text-sm font-semibold tracking-tight">AI Assistant</span>
+        <span className="ml-1 size-1.5 rounded-full bg-brand-accent status-pulse" />
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
+          <button
+            type="button"
+            aria-label="Close AI Assistant"
+            onClick={() => onOpenChange(false)}
+            className="absolute inset-0 bg-brand-deep/50 backdrop-blur-sm"
+          />
+          <div
+            role="dialog"
+            aria-label="AI Assistant"
+            className="relative w-full max-w-lg rounded-2xl bg-brand-deep text-white shadow-2xl ring-1 ring-white/10 overflow-hidden"
+          >
+            <div className="absolute -top-10 -right-10 size-40 rounded-full bg-brand-primary/25 blur-2xl" />
+            <div className="relative p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <BrainCircuit className="size-4 text-brand-accent" />
+                  <h3 className="text-sm font-bold">IndusBrain AI Assistant</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  aria-label="Close"
+                  className="size-8 grid place-items-center rounded-md hover:bg-white/10 transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mt-2 mb-4 leading-relaxed">
+                Ask about assets, procedures, incidents, or compliance across your plant
+                knowledge base.
+              </p>
+              <div className="flex gap-2 p-2 bg-white/5 rounded-lg border border-white/10 backdrop-blur">
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Ask IndusBrain anything…"
+                  className="bg-transparent border-none text-sm flex-1 focus:outline-none placeholder:text-slate-500 text-white"
+                />
+                <button
+                  type="button"
+                  className="size-8 shrink-0 bg-brand-primary rounded-md grid place-items-center hover:bg-brand-primary/90 transition-colors"
+                  aria-label="Send query"
+                >
+                  <Send className="size-3.5" />
+                </button>
+              </div>
+              <div className="mt-4">
+                <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">
+                  Suggested
+                </p>
+                <ul className="space-y-1.5">
+                  {suggestions.map((s) => (
+                    <li key={s}>
+                      <button className="text-xs text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-left w-full">
+                        <Search className="size-3 text-slate-500" />
+                        <span className="truncate">{s}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function PageHeader() {
   return (
-    <div className="flex justify-between items-end gap-4">
-      <div>
-        <div className="flex items-center gap-2 mb-2">
+    <div className="flex flex-wrap justify-between items-end gap-4">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-success bg-success/10 px-2 py-1 rounded">
             <span className="size-1.5 rounded-full bg-success status-pulse" />
             Live Monitoring
@@ -386,7 +650,7 @@ const FEED: FeedItem[] = [
 function AssetFeed() {
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
-      <header className="p-4 border-b border-border-subtle bg-secondary/40 flex justify-between items-center">
+      <header className="p-4 border-b border-border-subtle bg-secondary/40 flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <BrainCircuit className="size-4 text-brand-primary" />
           <h2 className="font-bold text-sm">Intelligent Asset Feed</h2>
@@ -425,7 +689,7 @@ function FeedRow({ item }: { item: FeedItem }) {
         {item.kind}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <p className="text-sm font-semibold text-brand-deep">{item.title}</p>
           <span className="text-[10px] font-mono text-muted-foreground shrink-0">
             {item.time}
@@ -466,7 +730,6 @@ function TelemetryChart() {
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
 
-  // 25 points across 24h
   const aiQuestions = [38, 42, 45, 48, 52, 54, 58, 62, 66, 64, 68, 72, 70, 66, 62, 64, 70, 72, 74, 76, 74, 70, 66, 62, 60];
   const documentsRetrieved = [44, 46, 48, 51, 54, 56, 58, 61, 63, 60, 64, 68, 66, 62, 60, 63, 66, 70, 72, 74, 72, 69, 66, 63, 61];
   const successfulResponses = [72, 74, 76, 78, 80, 82, 84, 83, 85, 86, 87, 88, 87, 86, 84, 85, 86, 88, 90, 91, 90, 89, 87, 86, 84];
@@ -485,7 +748,6 @@ function TelemetryChart() {
   const gridLines = [0, 25, 50, 75, 100];
   const hours = ["00", "04", "08", "12", "16", "20", "24"];
 
-  // peak demand window
   const step = innerW / (successfulResponses.length - 1);
   const anomalyX = padL + 15 * step;
 
@@ -496,7 +758,7 @@ function TelemetryChart() {
           <LineChart className="size-4 text-brand-primary" />
           <h2 className="font-bold text-sm">AI Query Trends</h2>
         </div>
-        <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider">
+        <div className="flex items-center gap-4 text-[10px] font-mono uppercase tracking-wider flex-wrap">
           <Legend color="var(--brand-primary)" label="AI Questions" />
           <Legend color="var(--brand-deep)" label="Documents Retrieved" />
           <Legend color="var(--brand-accent)" label="Successful Responses" dashed />
@@ -531,7 +793,6 @@ function TelemetryChart() {
             </linearGradient>
           </defs>
 
-          {/* grid */}
           {gridLines.map((g) => {
             const y = padT + innerH - (g / 100) * innerH;
             return (
@@ -558,7 +819,6 @@ function TelemetryChart() {
             );
           })}
 
-          {/* peak demand band */}
           <rect
             x={anomalyX - step * 0.5}
             y={padT}
@@ -577,7 +837,6 @@ function TelemetryChart() {
             opacity="0.6"
           />
 
-          {/* AI Questions area + line */}
           <path
             d={`${toPath(aiQuestions)} L${width - padR},${padT + innerH} L${padL},${
               padT + innerH
@@ -593,7 +852,6 @@ function TelemetryChart() {
             style={{ ["--dash-len" as string]: "2400" }}
           />
 
-          {/* Documents Retrieved line */}
           <path
             d={toPath(documentsRetrieved)}
             fill="none"
@@ -602,7 +860,6 @@ function TelemetryChart() {
             opacity="0.85"
           />
 
-          {/* Successful Responses line (dashed) */}
           <path
             d={toPath(successfulResponses)}
             fill="none"
@@ -611,7 +868,6 @@ function TelemetryChart() {
             strokeDasharray="4 3"
           />
 
-          {/* Peak marker dot */}
           <circle
             cx={anomalyX}
             cy={padT + innerH - (76 / 100) * innerH}
@@ -621,7 +877,6 @@ function TelemetryChart() {
             strokeWidth="2"
           />
 
-          {/* x-axis hours */}
           {hours.map((h, i) => {
             const x = padL + (innerW / (hours.length - 1)) * i;
             return (
@@ -640,7 +895,7 @@ function TelemetryChart() {
           })}
         </svg>
 
-        <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3 text-[11px] font-mono">
+        <div className="mt-3 flex items-center justify-between border-t border-border-subtle pt-3 text-[11px] font-mono flex-wrap gap-2">
           <span className="text-muted-foreground">
             Peak demand · 15:00 UTC · 76 questions/minute with 91% success rate
           </span>
@@ -740,62 +995,118 @@ function CriticalComponents() {
   );
 }
 
-function KnowledgeBaseCard() {
-  const suggestions = [
-    "How to reset H1-2 pump?",
-    "SOP for cooling cycle recalibration",
-    "Bearing wear · signature 0xFF4",
-  ];
+function UploadDocumentsCard() {
   return (
-    <section className="bg-brand-deep rounded-xl p-5 text-white shadow-sm relative overflow-hidden">
-      <div className="absolute -top-8 -right-8 size-32 rounded-full bg-brand-primary/20 blur-2xl" />
-      <div className="relative">
+    <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <BrainCircuit className="size-4 text-brand-accent" />
-          <h3 className="text-sm font-bold">Ask IndusBrain AI</h3>
+          <Upload className="size-4 text-brand-primary" />
+          <h3 className="font-bold text-sm">Upload Documents</h3>
         </div>
-        <p className="text-xs text-slate-400 mt-2 mb-4 leading-relaxed">
-          Query 20+ years of plant documentation, maintenance logs, and blueprints via
-          natural language.
+        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          PDF · DOCX · XLSX · CAD
+        </span>
+      </div>
+      <div className="border-2 border-dashed border-border-subtle rounded-lg p-8 text-center hover:bg-secondary/30 transition-colors">
+        <div className="size-12 mx-auto rounded-full bg-brand-primary/10 grid place-items-center">
+          <Upload className="size-5 text-brand-primary" />
+        </div>
+        <p className="mt-3 text-sm font-semibold text-brand-deep">
+          Drop files to ingest into the knowledge base
         </p>
-
-        <div className="flex gap-2 p-2 bg-white/5 rounded-lg border border-white/10 backdrop-blur">
-          <input
-            type="text"
-            placeholder="Ask about any asset, procedure, or incident…"
-            className="bg-transparent border-none text-xs flex-1 focus:outline-none placeholder:text-slate-500 text-white"
-          />
-          <button
-            type="button"
-            className="size-7 shrink-0 bg-brand-primary rounded-md grid place-items-center hover:bg-brand-primary/90 transition-colors"
-            aria-label="Send query"
-          >
-            <Send className="size-3.5" />
-          </button>
-        </div>
-
-        <div className="mt-4">
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">
-            Trending queries
-          </p>
-          <ul className="space-y-1.5">
-            {suggestions.map((s) => (
-              <li key={s}>
-                <button className="text-xs text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-left">
-                  <Search className="size-3 text-slate-500" />
-                  <span className="truncate">{s}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <p className="text-[11px] font-mono text-muted-foreground mt-1 uppercase tracking-wider">
+          or click to browse · max 250 MB
+        </p>
+        <button className="mt-4 inline-flex items-center gap-2 bg-brand-primary text-brand-primary-foreground px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-brand-primary/90 transition-colors">
+          <Upload className="size-4" />
+          Select Files
+        </button>
       </div>
     </section>
   );
 }
 
+function ComplianceCard() {
+  const items = [
+    { name: "ISO 55000 · Asset Management", score: 98, tone: "ok" as const },
+    { name: "IEC 61511 · Functional Safety", score: 95, tone: "ok" as const },
+    { name: "OSHA 1910 · Process Safety", score: 88, tone: "warn" as const },
+    { name: "ATEX 2014/34/EU", score: 92, tone: "ok" as const },
+  ];
+  return (
+    <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="size-4 text-brand-primary" />
+          <h3 className="font-bold text-sm">Compliance Center</h3>
+        </div>
+        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          Overall · 96.8%
+        </span>
+      </div>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {items.map((i) => {
+          const bar = i.tone === "warn" ? "bg-brand-accent/80" : "bg-success";
+          return (
+            <li
+              key={i.name}
+              className="rounded-lg border border-border-subtle p-3 bg-secondary/30"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-brand-deep truncate">
+                  {i.name}
+                </p>
+                <span className="text-[10px] font-mono font-bold text-brand-deep">
+                  {i.score}%
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full bg-card rounded-full overflow-hidden">
+                <div className={`h-full ${bar}`} style={{ width: `${i.score}%` }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function SettingsCard() {
+  const rows = [
+    { label: "Workspace", value: "Rotterdam Refinery" },
+    { label: "Data retention", value: "24 months" },
+    { label: "AI model", value: "IndusBrain · v4.2" },
+    { label: "SSO Provider", value: "Okta · Enterprise" },
+  ];
+  return (
+    <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Settings className="size-4 text-brand-primary" />
+          <h3 className="font-bold text-sm">Settings</h3>
+        </div>
+        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          Configuration
+        </span>
+      </div>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex items-center justify-between border border-border-subtle rounded-lg p-3 bg-secondary/30"
+          >
+            <dt className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+              {r.label}
+            </dt>
+            <dd className="text-xs font-semibold text-brand-deep">{r.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 function KnowledgeGraphPreview() {
-  // Node graph: central IndusBrain node with domain clusters
   const width = 400;
   const height = 400;
   const cx = width / 2;
@@ -836,7 +1147,7 @@ function KnowledgeGraphPreview() {
 
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
-      <header className="p-4 border-b border-border-subtle flex justify-between items-center">
+      <header className="p-4 border-b border-border-subtle flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Share2 className="size-4 text-brand-primary" />
           <h3 className="font-bold text-sm">Knowledge Graph Preview</h3>
@@ -941,3 +1252,5 @@ function KnowledgeGraphPreview() {
     </section>
   );
 }
+
+/* Note: KnowledgeBaseCard removed — replaced by floating AI Assistant per spec. */
