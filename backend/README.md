@@ -22,3 +22,7 @@ The health endpoint is available at `http://127.0.0.1:8000/health` and returns:
 ```
 
 Local CORS is configured for the standard Vite and common frontend development ports on `localhost` and `127.0.0.1`.
+
+## Configuration
+
+Copy `.env.example` to `.env` before adding local configuration. Settings are loaded with `pydantic-settings` and are available throughout the application as `app.core.config.settings`.
