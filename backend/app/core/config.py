@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     )
 
     OPENAI_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
     CHROMA_DB_PATH: str = "./data/chroma"
     UPLOAD_DIRECTORY: str = "./uploads"
     MAX_UPLOAD_SIZE: int = 262_144_000
