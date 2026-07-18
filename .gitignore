@@ -35,11 +35,17 @@ dist-ssr
 __pycache__/
 *.py[cod]
 
-# Python
-__pycache__/
-*.pyc
-
 # Environment
 .env
 .venv
 
+# ChromaDB
+data/chroma/
+*.sqlite3
+*.bin
+
+# Uploaded documents
+uploads/
+
+# Python virtual environments
+.venv/
