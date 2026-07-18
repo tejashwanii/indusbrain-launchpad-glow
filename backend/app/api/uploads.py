@@ -17,9 +17,14 @@ from app.services.pdf_service import (
     PasswordProtectedPDFError,
     extract_pdf_text,
 )
+from app.services.indexing_service import (
+    DocumentIndexingFailure,
+    DocumentIndexingService,
+)
 
 router = APIRouter(tags=["documents"])
 logger = get_logger("indusbrain.uploads")
+indexing_service = DocumentIndexingService()
 
 
 def _stored_pdf_path(document_id: str) -> Path:
@@ -160,6 +165,34 @@ async def upload_document(
             _validate_stored_pdf(document)
         except Exception as error:
             _raise_extraction_error(document, error)
+
+        try:
+            indexing_service.index_document(
+                str(_stored_pdf_path(document.document_id))
+            )
+
+            logger.info(
+                "document_indexed",
+                extra={
+                    "document_id": document.document_id,
+                    "uploaded_filename": document.filename,
+                },
+            )
+
+        except DocumentIndexingFailure as error:
+            logger.exception(
+                "document_indexing_failed",
+                extra={
+                    "document_id": document.document_id,
+                    "uploaded_filename": document.filename,
+                    "error": str(error),
+                },
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Document uploaded but indexing failed.",
+            ) from error
 
         return document
 
