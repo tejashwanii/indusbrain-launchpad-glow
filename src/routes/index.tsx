@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { askQuestion } from "../services/chat";
 import {
   ArrowUpRight,
   BarChart3,
@@ -342,6 +343,11 @@ function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
   );
 }
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 function FloatingAIAssistant({
   open,
   onOpenChange,
@@ -354,6 +360,49 @@ function FloatingAIAssistant({
     "Which assets need maintenance this week?",
     "Show compliance gaps for ISO 55000",
   ];
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const question = input.trim();
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: question,
+      },
+    ]);
+
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await askQuestion(question);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: response.answer,
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Unable to contact AI service.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <button
@@ -406,17 +455,55 @@ function FloatingAIAssistant({
                 <input
                   type="text"
                   autoFocus
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSend();
+                    }
+                  }}
                   placeholder="Ask IndusBrain anything…"
-                  className="bg-transparent border-none text-sm flex-1 focus:outline-none placeholder:text-slate-500 text-white"
+                  disabled={loading}
+                  className="bg-transparent border-none text-sm flex-1 focus:outline-none placeholder:text-slate-500 text-white disabled:opacity-50"
                 />
                 <button
                   type="button"
-                  className="size-8 shrink-0 bg-brand-primary rounded-md grid place-items-center hover:bg-brand-primary/90 transition-colors"
+                  onClick={handleSend}
+                  disabled={loading}
+                  className="size-8 shrink-0 bg-brand-primary rounded-md grid place-items-center hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
                   aria-label="Send query"
                 >
                   <Send className="size-3.5" />
                 </button>
               </div>
+              {messages.length > 0 && (
+                <div className="mt-4 max-h-72 overflow-y-auto space-y-3 rounded-lg bg-white/5 border border-white/10 p-3">
+                  {messages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                          message.role === "user"
+                            ? "bg-brand-primary text-white"
+                            : "bg-white/10 text-slate-200"
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+                    </div>
+                  ))}
+
+                  {loading && (
+                    <div className="text-xs text-slate-400 italic">
+                      IndusBrain is thinking...
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mt-4">
                 <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">
                   Suggested
@@ -424,7 +511,11 @@ function FloatingAIAssistant({
                 <ul className="space-y-1.5">
                   {suggestions.map((s) => (
                     <li key={s}>
-                      <button className="text-xs text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-left w-full">
+                      <button
+                        type="button"
+                        onClick={() => setInput(s)}
+                        className="text-xs text-slate-300 hover:text-white transition-colors flex items-center gap-2 text-left w-full"
+                      >
                         <Search className="size-3 text-slate-500" />
                         <span className="truncate">{s}</span>
                       </button>
