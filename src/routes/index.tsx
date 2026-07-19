@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { askQuestion } from "../services/chat";
+import { getDiagnostics, presentInsight, type DiagnosticInsight } from "../services/diagnostic";
 import { uploadDocument } from "../services/upload";
 import {
+  AlertTriangle,
   ArrowUpRight,
   BarChart3,
   Bell,
@@ -701,45 +703,41 @@ function Sparkline({ points, accent }: { points: number[]; accent?: boolean }) {
   );
 }
 
-type FeedItem = {
-  kind: "AI" | "LOG" | "SAFE";
-  title: string;
-  body: string;
-  time: string;
-  severity?: "critical" | "warning" | "info";
-  actions?: { label: string; primary?: boolean }[];
-};
-
-const FEED: FeedItem[] = [
-  {
-    kind: "AI",
-    title: "AI Insight · Hydraulic Pump H1-2",
-    body: "IndusBrain linked recent maintenance history and SOP guidance to recommend an inspection sequence for bearing wear and seal replacement within 48 hours.",
-    time: "14:22 UTC · Line 4A",
-    severity: "critical",
-    actions: [
-      { label: "Schedule Review", primary: true },
-      { label: "Open Related Documents" },
-    ],
-  },
-  {
-    kind: "AI",
-    title: "Knowledge Match · SOP-2145",
-    body: "Copilot connected incident #8842 to Standard Operating Procedure 2145 (Rev. 7) and surfaced the recommended isolation sequence for operators.",
-    time: "13:47 UTC · Rotterdam",
-    severity: "warning",
-    actions: [{ label: "Open Procedure", primary: true }, { label: "Dismiss" }],
-  },
-  {
-    kind: "LOG",
-    title: "Knowledge Update",
-    body: "AI synthesized recent operating notes and documentation for Unit 4B to recommend a cooling-cycle adjustment based on humidity patterns and prior OEM guidance.",
-    time: "12:10 UTC · Auto",
-    severity: "info",
-  },
-];
-
 function AssetFeed() {
+  const [items, setItems] = useState<DiagnosticInsight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadDiagnostics = async () => {
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+
+      try {
+        const response = await getDiagnostics();
+        if (!active) return;
+        setItems(response.insights);
+        setMessage(response.message ?? null);
+      } catch (err) {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Unable to load diagnostics.");
+        setItems([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    void loadDiagnostics();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
       <header className="p-4 border-b border-border-subtle bg-secondary/40 flex justify-between items-center flex-wrap gap-2">
@@ -749,7 +747,7 @@ function AssetFeed() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-            42 assets · 3 flagged
+            {loading ? "Loading diagnostics" : `${items.length} AI Insights · Generated from uploaded documents`}
           </span>
           <button className="text-[10px] font-bold uppercase tracking-wider text-brand-primary hover:underline">
             View all
@@ -757,51 +755,55 @@ function AssetFeed() {
         </div>
       </header>
 
-      <ul className="divide-y divide-border-subtle">
-        {FEED.map((item, idx) => (
-          <FeedRow key={idx} item={item} />
-        ))}
-      </ul>
+      {loading ? (
+        <div className="p-5 text-sm text-muted-foreground">Generating AI diagnostic feed…</div>
+      ) : error ? (
+        <div className="p-5 text-sm text-muted-foreground">{error}</div>
+      ) : items.length === 0 ? (
+        <div className="p-5 text-sm text-muted-foreground">{message ?? "No diagnostic insights are available yet. Upload documents to generate recommendations."}</div>
+      ) : (
+        <ul className="divide-y divide-border-subtle">
+          {items.map((item, idx) => (
+            <FeedRow key={`${item.title}-${idx}`} item={item} />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
 
-function FeedRow({ item }: { item: FeedItem }) {
-  const badgeClass =
-    item.severity === "critical"
-      ? "bg-brand-accent/10 text-brand-accent border-brand-accent/30"
-      : item.severity === "warning"
-      ? "bg-brand-primary/10 text-brand-primary border-brand-primary/25"
-      : "bg-secondary text-muted-foreground border-border-subtle";
+function FeedRow({ item }: { item: DiagnosticInsight }) {
+  const presentation = presentInsight(item);
   return (
     <li className="p-5 flex gap-4">
-      <div
-        className={`size-10 rounded-md border grid place-items-center shrink-0 text-[10px] font-mono font-bold ${badgeClass}`}
-      >
-        {item.kind}
-      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-4 flex-wrap">
-          <p className="text-sm font-semibold text-brand-deep">{item.title}</p>
-          <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-            {item.time}
+          <div className="min-w-0">
+            <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-wide whitespace-nowrap ${presentation.badgeClass}`}>
+              {presentation.categoryLabel}
+            </span>
+            <p className="mt-2 text-sm font-semibold text-brand-deep">{presentation.title}</p>
+          </div>
+          <span className="text-[10px] font-mono text-muted-foreground shrink-0 text-right">
+            <span className="block uppercase tracking-wider">{presentation.metaLabel}</span>
+            <span className="block mt-0.5 text-brand-deep normal-case tracking-normal">{presentation.metaValue}</span>
           </span>
         </div>
         <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-          {item.body}
+          {presentation.body}
         </p>
-        {item.actions && (
+        {presentation.actions.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {item.actions.map((a) => (
+            {presentation.actions.slice(0, 2).map((action) => (
               <button
-                key={a.label}
+                key={action.label}
                 className={
-                  a.primary
+                  action.primary
                     ? "text-xs bg-brand-primary text-brand-primary-foreground px-3 py-1.5 rounded-md font-semibold hover:bg-brand-primary/90 transition-colors"
                     : "text-xs bg-secondary text-brand-deep px-3 py-1.5 rounded-md font-semibold border border-border-subtle hover:bg-card transition-colors"
                 }
               >
-                {a.label}
+                {action.label}
               </button>
             ))}
           </div>
