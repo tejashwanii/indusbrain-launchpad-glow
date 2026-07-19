@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { askQuestion } from "../services/chat";
+import { uploadDocument } from "../services/upload";
 import {
   ArrowUpRight,
   BarChart3,
@@ -1087,6 +1088,38 @@ function CriticalComponents() {
 }
 
 function UploadDocumentsCard() {
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setUploading(true);
+    setMessage("");
+
+    try {
+      const response = await uploadDocument(file);
+
+      setMessage(
+        `✅ ${response.filename} uploaded and indexed successfully.`,
+      );
+    } catch {
+      setMessage("❌ Upload failed.");
+    } finally {
+      setUploading(false);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -1108,10 +1141,26 @@ function UploadDocumentsCard() {
         <p className="text-[11px] font-mono text-muted-foreground mt-1 uppercase tracking-wider">
           or click to browse · max 250 MB
         </p>
-        <button className="mt-4 inline-flex items-center gap-2 bg-brand-primary text-brand-primary-foreground px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-brand-primary/90 transition-colors">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={handleUpload}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="mt-4 inline-flex items-center gap-2 bg-brand-primary text-brand-primary-foreground px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
+        >
           <Upload className="size-4" />
-          Select Files
+          {uploading ? "Uploading..." : "Select Files"}
         </button>
+        {message && (
+          <p className="mt-3 text-sm text-brand-primary font-medium">
+            {message}
+          </p>
+        )}
       </div>
     </section>
   );
