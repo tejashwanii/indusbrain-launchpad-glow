@@ -25,6 +25,11 @@ import {
   X,
 } from "lucide-react";
 
+import {
+  getDashboardStats,
+  type DashboardStats,
+} from "../services/dashboard";
+
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
@@ -575,51 +580,51 @@ type Kpi = {
 };
 
 function KpiRow() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    getDashboardStats()
+      .then(setStats)
+      .catch(console.error);
+  }, []);
+
   const KPIS: Kpi[] = [
     {
       label: "Documents Indexed",
-      value: "18,420",
-      delta: "+248",
-      deltaTone: "positive",
-      sub: "across 14 knowledge domains",
-      spark: [30, 34, 38, 42, 45, 50, 54, 58, 62, 66, 70, 74],
+      value: String(stats?.documents_indexed ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "uploaded documents",
+      spark: [],
     },
     {
-      label: "Registered Assets",
-      value: "3,214",
-      delta: "+12",
-      deltaTone: "positive",
-      sub: "across 8 sites",
-      spark: [50, 52, 54, 55, 57, 58, 60, 62, 64, 65, 67, 68],
+      label: "Indexed Chunks",
+      value: String(stats?.indexed_chunks ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "vector database",
+      spark: [],
     },
     {
-      label: "Compliance Score",
-      value: "96.8%",
-      delta: "↑ 0.6",
-      deltaTone: "positive",
-      sub: "ISO 55000 · IEC 61511",
-      spark: [70, 72, 74, 73, 75, 76, 78, 79, 80, 82, 83, 84],
+      label: "AI Queries",
+      value: String(stats?.ai_queries ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "current session",
+      spark: [],
     },
     {
-      label: "Pending Maintenance",
-      value: "27",
-      delta: "5 overdue",
-      deltaTone: "warning",
-      sub: "work orders open",
-      spark: [22, 24, 26, 25, 28, 30, 28, 26, 27, 29, 28, 27],
-    },
-    {
-      label: "AI Queries Today",
-      value: "1,842",
-      delta: "+14%",
-      deltaTone: "positive",
-      sub: "avg 2.1s response",
-      spark: [40, 45, 50, 55, 58, 62, 66, 70, 74, 78, 82, 88],
+      label: "Avg Response",
+      value: stats?.average_response_time ?? "-",
+      delta: "",
+      deltaTone: "neutral",
+      sub: "RAG response time",
+      spark: [],
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
       {KPIS.map((kpi) => (
         <KpiCard key={kpi.label} kpi={kpi} />
       ))}
