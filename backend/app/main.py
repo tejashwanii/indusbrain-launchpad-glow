@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.uploads import router as uploads_router
 from app.api.chat import router as chat_router
 from app.api.documents import router as documents_router
+from app.api.diagnostics import router as diagnostics_router
+from app.api.reports import router as reports_router
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger, install_exception_hooks
 from app.api.dashboard import router as dashboard_router
@@ -62,6 +64,8 @@ app.include_router(uploads_router)
 app.include_router(chat_router)
 app.include_router(dashboard_router)
 app.include_router(documents_router)
+app.include_router(diagnostics_router)
+app.include_router(reports_router)
 
 
 @app.middleware("http")
