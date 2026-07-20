@@ -6,11 +6,19 @@ import json
 import re
 from typing import Any
 
+from app.core.logging import get_logger
+from app.services.gemini_client import GeminiClientError
 from app.services.rag_service import RAGService, RAGServiceError
 
 
 class DiagnosticServiceError(Exception):
     """Raised when a diagnostic payload cannot be generated."""
+
+
+logger = get_logger("indusbrain.diagnostics.service")
+AI_UNAVAILABLE_MESSAGE = (
+    "AI insight generation is temporarily unavailable. Your uploaded documents remain indexed and can be retried shortly."
+)
 
 
 class DiagnosticService:
@@ -47,7 +55,25 @@ class DiagnosticService:
                 generation_query,
                 search_results.results,
             )
-        except (ValueError, RAGServiceError) as error:
+        except GeminiClientError as error:
+            logger.warning(
+                "diagnostic_ai_generation_unavailable",
+                extra={"error_type": type(error).__name__, "error": str(error)},
+                exc_info=True,
+            )
+            return self._ai_unavailable_payload()
+        except RAGServiceError as error:
+            if self._has_gemini_failure(error):
+                logger.warning(
+                    "diagnostic_ai_generation_unavailable",
+                    extra={"error_type": type(error).__name__, "error": str(error)},
+                    exc_info=True,
+                )
+                return self._ai_unavailable_payload()
+            raise DiagnosticServiceError(
+                "Unable to generate maintenance diagnostics."
+            ) from error
+        except ValueError as error:
             raise DiagnosticServiceError(
                 "Unable to generate maintenance diagnostics."
             ) from error
@@ -58,6 +84,23 @@ class DiagnosticService:
             raise DiagnosticServiceError("Gemini returned an invalid diagnostic response.") from error
 
         return payload
+
+    @staticmethod
+    def _ai_unavailable_payload() -> dict[str, Any]:
+        """Return the stable diagnostic response while Gemini is unavailable."""
+
+        return {"insights": [], "message": AI_UNAVAILABLE_MESSAGE}
+
+    @staticmethod
+    def _has_gemini_failure(error: BaseException) -> bool:
+        """Identify a Gemini failure preserved as the cause of a RAG error."""
+
+        current: BaseException | None = error
+        while current is not None:
+            if isinstance(current, GeminiClientError):
+                return True
+            current = current.__cause__ or current.__context__
+        return False
 
     def _parse_payload(self, answer: str) -> dict[str, list[dict[str, Any]]]:
         cleaned = self._strip_code_fences(answer)

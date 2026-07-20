@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 
 from app.services.diagnostic_service import DiagnosticService
+from app.services.gemini_client import GeminiClientError
+from app.services.rag_service import RAGServiceError
 
 
 class DummyRAGService:
@@ -39,3 +41,33 @@ def test_generate_diagnostics_returns_empty_state_without_indexed_documents() ->
         "insights": [],
         "message": "No indexed documents available.",
     }
+
+
+def test_generate_diagnostics_returns_fallback_when_gemini_is_unavailable() -> None:
+    class UnavailableGeminiRAGService(DummyRAGService):
+        def generate_from_context(self, question: str, search_results: list[object]) -> str:
+            raise GeminiClientError("503 UNAVAILABLE")
+
+    payload = DiagnosticService(
+        rag_service=UnavailableGeminiRAGService("")
+    ).generate_diagnostics()
+
+    assert payload["insights"] == []
+    assert payload["message"] == (
+        "AI insight generation is temporarily unavailable. Your uploaded documents remain indexed and can be retried shortly."
+    )
+
+
+def test_generate_diagnostics_handles_wrapped_gemini_failure() -> None:
+    class WrappedGeminiFailureRAGService(DummyRAGService):
+        def generate_from_context(self, question: str, search_results: list[object]) -> str:
+            try:
+                raise GeminiClientError("503 UNAVAILABLE")
+            except GeminiClientError as error:
+                raise RAGServiceError("Unable to generate diagnostics.") from error
+
+    payload = DiagnosticService(
+        rag_service=WrappedGeminiFailureRAGService("")
+    ).generate_diagnostics()
+
+    assert payload["insights"] == []
