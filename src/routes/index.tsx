@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { askQuestion } from "../services/chat";
 import { getDiagnostics, presentInsight, type DiagnosticInsight } from "../services/diagnostic";
 import { uploadDocument } from "../services/upload";
+import { downloadReport } from "../services/report";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -15,6 +17,7 @@ import {
   Download,
   LayoutDashboard,
   LineChart,
+  LoaderCircle,
   PanelLeft,
   Search,
   Send,
@@ -535,6 +538,23 @@ function FloatingAIAssistant({
 }
 
 function PageHeader() {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (exporting) return;
+
+    setExporting(true);
+    try {
+      await downloadReport();
+    } catch (error) {
+      toast.error("Report export failed", {
+        description: error instanceof Error ? error.message : "Unable to export the report.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="flex flex-wrap justify-between items-end gap-4">
       <div className="min-w-0">
@@ -554,9 +574,15 @@ function PageHeader() {
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <button className="inline-flex items-center gap-2 bg-card border border-border-subtle px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-secondary transition-colors">
-          <Download className="size-4" />
-          Export Report
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          aria-busy={exporting}
+          className="inline-flex items-center gap-2 bg-card border border-border-subtle px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-secondary transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {exporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />}
+          {exporting ? "Generating..." : "Export Report"}
         </button>
         <button className="inline-flex items-center gap-2 bg-brand-deep text-white px-3.5 py-2 rounded-md text-sm font-semibold shadow-sm hover:bg-brand-deep/90 transition-colors">
           <BrainCircuit className="size-4" />
