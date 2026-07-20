@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -45,6 +46,26 @@ async def store_pdf(
     except Exception:
         destination.unlink(missing_ok=True)
         raise
+
+    metadata_file = destination_directory / "metadata.json"
+
+    if metadata_file.exists():
+        with metadata_file.open("r", encoding="utf-8") as f:
+            metadata = json.load(f)
+    else:
+        metadata = []
+
+    metadata.append(
+        {
+            "document_id": document_id,
+            "original_filename": filename,
+            "stored_filename": f"{document_id}.pdf",
+            "uploaded_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
+    with metadata_file.open("w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
 
     return DocumentUploadResponse(
         document_id=document_id,

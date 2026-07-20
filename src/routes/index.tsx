@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { askQuestion } from "../services/chat";
 import { getDiagnostics, presentInsight, type DiagnosticInsight } from "../services/diagnostic";
 import { uploadDocument } from "../services/upload";
+import { getDocuments, type DocumentItem } from "@/services/documents";
 import { downloadReport } from "../services/report";
 import { toast } from "sonner";
 import {
@@ -29,6 +30,11 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+
+import {
+  getDashboardStats,
+  type DashboardStats,
+} from "../services/dashboard";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -603,51 +609,51 @@ type Kpi = {
 };
 
 function KpiRow() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    getDashboardStats()
+      .then(setStats)
+      .catch(console.error);
+  }, []);
+
   const KPIS: Kpi[] = [
     {
       label: "Documents Indexed",
-      value: "18,420",
-      delta: "+248",
-      deltaTone: "positive",
-      sub: "across 14 knowledge domains",
-      spark: [30, 34, 38, 42, 45, 50, 54, 58, 62, 66, 70, 74],
+      value: String(stats?.documents_indexed ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "uploaded documents",
+      spark: [],
     },
     {
-      label: "Registered Assets",
-      value: "3,214",
-      delta: "+12",
-      deltaTone: "positive",
-      sub: "across 8 sites",
-      spark: [50, 52, 54, 55, 57, 58, 60, 62, 64, 65, 67, 68],
+      label: "Indexed Chunks",
+      value: String(stats?.indexed_chunks ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "vector database",
+      spark: [],
     },
     {
-      label: "Compliance Score",
-      value: "96.8%",
-      delta: "↑ 0.6",
-      deltaTone: "positive",
-      sub: "ISO 55000 · IEC 61511",
-      spark: [70, 72, 74, 73, 75, 76, 78, 79, 80, 82, 83, 84],
+      label: "AI Queries",
+      value: String(stats?.ai_queries ?? 0),
+      delta: "",
+      deltaTone: "neutral",
+      sub: "current session",
+      spark: [],
     },
     {
-      label: "Pending Maintenance",
-      value: "27",
-      delta: "5 overdue",
-      deltaTone: "warning",
-      sub: "work orders open",
-      spark: [22, 24, 26, 25, 28, 30, 28, 26, 27, 29, 28, 27],
-    },
-    {
-      label: "AI Queries Today",
-      value: "1,842",
-      delta: "+14%",
-      deltaTone: "positive",
-      sub: "avg 2.1s response",
-      spark: [40, 45, 50, 55, 58, 62, 66, 70, 74, 78, 82, 88],
+      label: "Avg Response",
+      value: stats?.average_response_time ?? "-",
+      delta: "",
+      deltaTone: "neutral",
+      sub: "RAG response time",
+      spark: [],
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
       {KPIS.map((kpi) => (
         <KpiCard key={kpi.label} kpi={kpi} />
       ))}
@@ -1070,46 +1076,39 @@ const COMPONENTS: {
 ];
 
 function CriticalComponents() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  useEffect(() => {
+    async function loadDocuments() {
+      try {
+        const data = await getDocuments();
+        setDocuments(data.documents);
+      } catch (error) {
+        console.error("Failed to load documents:", error);
+      }
+    }
+
+    loadDocuments();
+  }, []);
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm">Most Referenced Assets</h3>
+        <h3 className="font-bold text-sm">Knowledge Hub</h3>
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          Fleet · 42
+          Documents · {documents.length}
         </span>
       </div>
       <ul className="space-y-3.5">
-        {COMPONENTS.map((c) => {
-          const bar =
-            c.tone === "crit"
-              ? "bg-brand-accent"
-              : c.tone === "warn"
-              ? "bg-brand-accent/70"
-              : "bg-success";
-          return (
-            <li key={c.name} className="grid grid-cols-[1fr_auto] gap-2 items-center">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-brand-deep truncate">
-                  {c.name}
-                </p>
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-                  {c.location} · {c.metric}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-24 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${bar}`}
-                    style={{ width: `${c.health}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono font-bold text-brand-deep w-8 text-right">
-                  {c.health}%
-                </span>
-              </div>
-            </li>
-          );
-        })}
+      {documents.map((document) => (
+          <li
+            key={document.filename}
+            className="flex items-center justify-between"
+          >
+            <p className="text-sm font-medium">{document.filename}</p>
+            <span className="text-xs text-muted-foreground">
+              {document.status}
+            </span>
+          </li>
+        ))}
       </ul>
     </section>
   );
