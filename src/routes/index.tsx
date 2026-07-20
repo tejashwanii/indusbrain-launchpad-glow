@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { askQuestion } from "../services/chat";
 import { uploadDocument } from "../services/upload";
+import { getDocuments, type DocumentItem } from "@/services/documents";
 import {
   ArrowUpRight,
   BarChart3,
@@ -1047,46 +1048,39 @@ const COMPONENTS: {
 ];
 
 function CriticalComponents() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  useEffect(() => {
+    async function loadDocuments() {
+      try {
+        const data = await getDocuments();
+        setDocuments(data.documents);
+      } catch (error) {
+        console.error("Failed to load documents:", error);
+      }
+    }
+
+    loadDocuments();
+  }, []);
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-sm">Most Referenced Assets</h3>
+        <h3 className="font-bold text-sm">Knowledge Hub</h3>
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          Fleet · 42
+          Documents · {documents.length}
         </span>
       </div>
       <ul className="space-y-3.5">
-        {COMPONENTS.map((c) => {
-          const bar =
-            c.tone === "crit"
-              ? "bg-brand-accent"
-              : c.tone === "warn"
-              ? "bg-brand-accent/70"
-              : "bg-success";
-          return (
-            <li key={c.name} className="grid grid-cols-[1fr_auto] gap-2 items-center">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-brand-deep truncate">
-                  {c.name}
-                </p>
-                <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-                  {c.location} · {c.metric}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-24 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${bar}`}
-                    style={{ width: `${c.health}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono font-bold text-brand-deep w-8 text-right">
-                  {c.health}%
-                </span>
-              </div>
-            </li>
-          );
-        })}
+      {documents.map((document) => (
+          <li
+            key={document.filename}
+            className="flex items-center justify-between"
+          >
+            <p className="text-sm font-medium">{document.filename}</p>
+            <span className="text-xs text-muted-foreground">
+              {document.status}
+            </span>
+          </li>
+        ))}
       </ul>
     </section>
   );

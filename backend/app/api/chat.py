@@ -3,11 +3,15 @@ from fastapi import APIRouter, HTTPException, status
 from app.core.logging import get_logger
 from app.schemas.chat import ChatRequest, ChatResponse, SourceChunk
 from app.services.rag_service import RAGService, RAGServiceError
+import time
+
+from app.services.stats_service import StatsService
 
 router = APIRouter(tags=["chat"])
 logger = get_logger("indusbrain.chat")
 
 rag_service = RAGService()
+stats_service = StatsService()
 
 
 @router.post(
@@ -24,7 +28,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
     )
 
     try:
+        start_time = time.perf_counter()
         response = rag_service.answer_question(request.question)
+        response_time = time.perf_counter() - start_time
+        stats_service.record_query(response_time)
 
         logger.info(
             "chat_request_completed",
