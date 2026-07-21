@@ -164,7 +164,7 @@ function formatTitle(title: string, body: string, category: InsightCategory): st
 function formatBody(body: string): string {
   const cleaned = body.trim().replace(/\s+/g, " ");
   if (!cleaned) {
-    return "No additional guidance was provided for this asset.";
+    return "No actionable recommendation could be generated from the uploaded documents.";
   }
 
   const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(Boolean);
