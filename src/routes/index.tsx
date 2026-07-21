@@ -1201,7 +1201,7 @@ function UploadDocumentsCard() {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-      
+
     } catch {
       setMessage("❌ Upload failed.");
     } finally {
@@ -1338,13 +1338,34 @@ function ComplianceCard() {
 }
 
 function KnowledgeGraphPreview() {
+  const [graph, setGraph] = useState<any>(null);
   const width = 400;
   const height = 400;
   const cx = width / 2;
   const cy = height / 2;
 
+  useEffect(() => {
+  async function loadGraph() {
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/knowledge-graph/60e8aeba-760f-46f2-9e6e-a1cb2858195c"
+      );
+
+      const data = await response.json();
+
+      setGraph(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  loadGraph();
+}, []);
+
+console.log(graph);
+
   type Node = { id: string; label: string; x: number; y: number; r: number; tone: "core" | "primary" | "accent" | "muted" };
-  const nodes: Node[] = [
+  const defaultNodes: Node[] = [
     { id: "core", label: "Knowledge", x: cx, y: cy, r: 26, tone: "core" },
     { id: "assets", label: "Equipment", x: cx - 130, y: cy - 90, r: 22, tone: "primary" },
     { id: "sops", label: "Procedures", x: cx + 130, y: cy - 90, r: 22, tone: "primary" },
@@ -1355,13 +1376,35 @@ function KnowledgeGraphPreview() {
     { id: "vendors", label: "Parts", x: cx - 165, y: cy - 10, r: 11, tone: "muted" },
     { id: "incidents", label: "Failures", x: cx + 165, y: cy - 10, r: 11, tone: "muted" },
   ];
-  const edges: [string, string][] = [
+  const defaultEdges: [string, string][] = [
     ["core", "assets"], ["core", "sops"], ["core", "compliance"],
     ["core", "maint"], ["core", "sensors"], ["core", "docs"],
     ["core", "vendors"], ["core", "incidents"],
     ["assets", "sensors"], ["assets", "maint"], ["sops", "compliance"],
     ["maint", "incidents"], ["sops", "docs"], ["compliance", "docs"],
   ];
+
+const radius = 120;
+
+const nodes: Node[] = graph
+  ? graph.nodes.map((node: any, index: number) => {
+      const angle = (2 * Math.PI * index) / graph.nodes.length;
+
+      return {
+        id: node.id,
+        label: node.label,
+        x: cx + radius * Math.cos(angle),
+        y: cy + radius * Math.sin(angle),
+        r: 18,
+        tone: index === 0 ? "core" : "primary",
+      };
+    })
+  : defaultNodes;
+
+const edges: [string, string][] = graph
+  ? graph.edges.map((edge: any) => [edge.source, edge.target] as [string, string])
+  : defaultEdges;
+
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
   const fillFor = (tone: Node["tone"]) =>
     tone === "core"
