@@ -21,7 +21,6 @@ import {
   PanelLeft,
   Search,
   Send,
-  Settings,
   ShieldCheck,
   Share2,
   Sparkles,
@@ -53,7 +52,6 @@ const NAV: NavItem[] = [
   { id: "compliance", label: "Compliance Center", icon: ShieldCheck },
   { id: "maintenance", label: "Maintenance Intelligence", icon: Wrench },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 function Dashboard() {
@@ -145,9 +143,6 @@ function Dashboard() {
           <section id="compliance" className="scroll-mt-4">
             <ComplianceCard />
           </section>
-          <section id="settings" className="scroll-mt-4">
-            <SettingsCard />
-          </section>
         </div>
       </main>
 
@@ -212,7 +207,7 @@ function Sidebar({
                     IndusBrain
                   </span>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-                    ops · v4.2
+                    Industrial Intelligence
                   </span>
                 </div>
               </div>
@@ -348,7 +343,7 @@ function Topbar({
         <ChevronRight className="size-3.5 text-slate-300 hidden sm:inline" />
         <span className="text-muted-foreground hidden md:inline">Industrial Knowledge Platform</span>
         <ChevronRight className="size-3.5 text-slate-300 hidden md:inline" />
-        <span className="text-brand-deep truncate">Demo Workspace</span>
+        <span className="text-brand-deep truncate">Demo Environment</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -640,18 +635,10 @@ function PageHeader() {
     <div className="flex flex-wrap justify-between items-end gap-4">
       <div className="min-w-0">
         <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-success bg-success/10 px-2 py-1 rounded">
-            <span className="size-1.5 rounded-full bg-success status-pulse" />
-            Live Monitoring
-          </span>
-          <span className="text-[10px] font-mono text-muted-foreground">
-            Shift · 08:00 – 20:00 UTC
-          </span>
         </div>
         <h1 className="text-2xl font-bold tracking-tight">IndusBrain Dashboard</h1>
         <p className="text-muted-foreground text-sm">
-          Real-time synthesis of sensor telemetry, maintenance logs, and 20+ years of
-          plant documentation.
+          AI-powered retrieval and analysis of industrial manuals, SOPs, maintenance logs, and compliance documents.
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -698,15 +685,15 @@ function KpiRow() {
       value: String(stats?.documents_indexed ?? 0),
       delta: "",
       deltaTone: "neutral",
-      sub: "uploaded documents",
+      sub: "processed knowledge sources",
       spark: [],
     },
     {
       label: "Indexed Chunks",
-      value: String(stats?.indexed_chunks ?? 0),
+      value: (stats?.indexed_chunks ?? 0).toLocaleString(),
       delta: "",
       deltaTone: "neutral",
-      sub: "vector database",
+      sub: "semantic knowledge chunks",
       spark: [],
     },
     {
@@ -714,15 +701,15 @@ function KpiRow() {
       value: String(stats?.ai_queries ?? 0),
       delta: "",
       deltaTone: "neutral",
-      sub: "current session",
+      sub: "questions answered",
       spark: [],
     },
     {
-      label: "Avg Response",
+      label: "Average Response Time",
       value: stats?.average_response_time ?? "-",
       delta: "",
       deltaTone: "neutral",
-      sub: "RAG response time",
+      sub: "RAG pipeline",
       spark: [],
     },
   ];
@@ -850,15 +837,14 @@ function AssetFeed() {
       <header className="p-4 border-b border-border-subtle bg-secondary/40 flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <BrainCircuit className="size-4 text-brand-primary" />
-          <h2 className="font-bold text-sm">Intelligent Asset Feed</h2>
+          <h2 className="font-bold text-sm">AI Maintenance Insights</h2>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-            {loading ? "Loading diagnostics" : `${items.length} AI Insights · Generated from uploaded documents`}
+            {loading
+              ? "Analyzing uploaded documents..."
+              : `${items.length} AI insights generated from your knowledge base`}
           </span>
-          <button className="text-[10px] font-bold uppercase tracking-wider text-brand-primary hover:underline">
-            View all
-          </button>
         </div>
       </header>
 
@@ -1313,41 +1299,6 @@ function ComplianceCard() {
   );
 }
 
-function SettingsCard() {
-  const rows = [
-    { label: "Workspace", value: "Rotterdam Refinery" },
-    { label: "Data retention", value: "24 months" },
-    { label: "AI model", value: "IndusBrain · v4.2" },
-    { label: "SSO Provider", value: "Okta · Enterprise" },
-  ];
-  return (
-    <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <Settings className="size-4 text-brand-primary" />
-          <h3 className="font-bold text-sm">Settings</h3>
-        </div>
-        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          Configuration
-        </span>
-      </div>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {rows.map((r) => (
-          <div
-            key={r.label}
-            className="flex items-center justify-between border border-border-subtle rounded-lg p-3 bg-secondary/30"
-          >
-            <dt className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              {r.label}
-            </dt>
-            <dd className="text-xs font-semibold text-brand-deep">{r.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
-}
-
 function KnowledgeGraphPreview() {
   const width = 400;
   const height = 400;
@@ -1356,15 +1307,15 @@ function KnowledgeGraphPreview() {
 
   type Node = { id: string; label: string; x: number; y: number; r: number; tone: "core" | "primary" | "accent" | "muted" };
   const nodes: Node[] = [
-    { id: "core", label: "IndusBrain", x: cx, y: cy, r: 26, tone: "core" },
-    { id: "assets", label: "Assets", x: cx - 130, y: cy - 90, r: 16, tone: "primary" },
-    { id: "sops", label: "SOPs", x: cx + 130, y: cy - 90, r: 16, tone: "primary" },
-    { id: "compliance", label: "Compliance", x: cx + 140, y: cy + 70, r: 16, tone: "accent" },
-    { id: "maint", label: "Maintenance", x: cx - 140, y: cy + 80, r: 16, tone: "primary" },
-    { id: "sensors", label: "Sensors", x: cx, y: cy - 140, r: 12, tone: "muted" },
+    { id: "core", label: "Knowledge", x: cx, y: cy, r: 26, tone: "core" },
+    { id: "assets", label: "Equipment", x: cx - 130, y: cy - 90, r: 22, tone: "primary" },
+    { id: "sops", label: "Procedures", x: cx + 130, y: cy - 90, r: 22, tone: "primary" },
+    { id: "compliance", label: "Safety", x: cx + 140, y: cy + 70, r: 22, tone: "accent" },
+    { id: "maint", label: "Maintenance", x: cx - 140, y: cy + 80, r: 22, tone: "primary" },
+    { id: "sensors", label: "Components", x: cx, y: cy - 140, r: 12, tone: "muted" },
     { id: "docs", label: "Documents", x: cx, y: cy + 140, r: 12, tone: "muted" },
-    { id: "vendors", label: "Vendors", x: cx - 165, y: cy - 10, r: 11, tone: "muted" },
-    { id: "incidents", label: "Incidents", x: cx + 165, y: cy - 10, r: 11, tone: "muted" },
+    { id: "vendors", label: "Parts", x: cx - 165, y: cy - 10, r: 11, tone: "muted" },
+    { id: "incidents", label: "Failures", x: cx + 165, y: cy - 10, r: 11, tone: "muted" },
   ];
   const edges: [string, string][] = [
     ["core", "assets"], ["core", "sops"], ["core", "compliance"],
@@ -1392,10 +1343,10 @@ function KnowledgeGraphPreview() {
       <header className="p-4 border-b border-border-subtle flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Share2 className="size-4 text-brand-primary" />
-          <h3 className="font-bold text-sm">Knowledge Graph Preview</h3>
+          <h3 className="font-bold text-sm">AI Knowledge Graph</h3>
         </div>
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          12.4k nodes · 48k edges
+          Knowledge Extraction
         </span>
       </header>
       <div className="relative">
@@ -1465,7 +1416,7 @@ function KnowledgeGraphPreview() {
                 x={n.x}
                 y={n.y + 3}
                 textAnchor="middle"
-                fontSize={n.tone === "core" ? 10 : 9}
+                fontSize={n.tone === "core" ? 9 : 7}
                 fontFamily="var(--font-mono)"
                 fontWeight={n.tone === "core" ? 700 : 500}
                 fill={textFill(n.tone)}
@@ -1476,18 +1427,15 @@ function KnowledgeGraphPreview() {
           ))}
         </svg>
         <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-brand-deep via-brand-deep/70 to-transparent text-white">
-          <div className="flex items-center justify-between">
+          <div className="space-y-1">
             <div>
               <p className="text-[10px] font-mono uppercase tracking-widest text-slate-300">
-                Live domain graph
+                AI ENTITY EXTRACTION
               </p>
               <p className="text-sm font-semibold mt-0.5">
-                8 core domains · updated 2m ago
+                Relationships extracted from uploaded industrial documents
               </p>
             </div>
-            <button className="text-[10px] font-bold uppercase tracking-wider bg-white/10 border border-white/15 backdrop-blur px-2.5 py-1.5 rounded-md hover:bg-white/20 transition-colors">
-              Explore
-            </button>
           </div>
         </div>
       </div>
