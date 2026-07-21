@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   ArrowUpRight,
   BarChart3,
-  Bell,
   BookOpen,
   BrainCircuit,
   ChevronLeft,
@@ -62,6 +61,7 @@ function Dashboard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [active, setActive] = useState("dashboard");
   const [aiOpen, setAiOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Scroll spy
@@ -102,7 +102,17 @@ function Dashboard() {
         onCloseMobile={() => setMobileOpen(false)}
       />
       <main className="flex-1 flex flex-col min-w-0">
-        <Topbar onOpenMobileNav={() => setMobileOpen(true)} />
+        <Topbar
+          onOpenMobileNav={() => setMobileOpen(true)}
+          onSearch={(query) => {
+            setSearchQuery(query);
+            setAiOpen(true);
+
+            setTimeout(() => {
+              setSearchQuery("");
+            }, 100);
+          }}
+        />
         <div
           ref={scrollRef}
           className="p-4 sm:p-6 lg:p-8 space-y-6 overflow-y-auto max-h-[calc(100vh-4rem)]"
@@ -141,7 +151,11 @@ function Dashboard() {
         </div>
       </main>
 
-      <FloatingAIAssistant open={aiOpen} onOpenChange={setAiOpen} />
+      <FloatingAIAssistant
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        initialQuery={searchQuery}
+      />
     </div>
   );
 }
@@ -279,16 +293,29 @@ function Sidebar({
             <div className="rounded-lg bg-brand-deep p-3 text-white">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-                  AI Engine
+                  AI Pipeline
                 </p>
                 <span className="size-2 rounded-full bg-brand-accent status-pulse" />
               </div>
-              <p className="text-sm font-medium mt-1">Engine Optimal</p>
-              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
-                14.2k signals / min
+
+              <p className="text-sm font-medium mt-1">
+                RAG + Knowledge Graph
               </p>
-              <div className="mt-2 h-1 w-full bg-slate-700/70 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-accent w-3/4" />
+
+              <p className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                PDF • OCR • Entity Extraction
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-1">
+                <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[9px]">
+                  RAG
+                </span>
+                <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[9px]">
+                  ChromaDB
+                </span>
+                <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[9px]">
+                  AI Search
+                </span>
               </div>
             </div>
           </div>
@@ -298,7 +325,14 @@ function Sidebar({
   );
 }
 
-function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
+function Topbar({
+  onOpenMobileNav,
+  onSearch,
+}: {
+  onOpenMobileNav: () => void;
+  onSearch: (query: string) => void;
+}) {
+  const [query, setQuery] = useState("");
   return (
     <header className="h-16 shrink-0 border-b border-border-subtle bg-card flex items-center justify-between px-4 sm:px-6 lg:px-8 gap-3">
       <div className="flex items-center gap-3 text-sm font-medium min-w-0">
@@ -310,11 +344,11 @@ function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
         >
           <PanelLeft className="size-4" />
         </button>
-        <span className="text-muted-foreground hidden sm:inline">Production Floor</span>
+        <span className="text-muted-foreground hidden sm:inline">Workspace</span>
         <ChevronRight className="size-3.5 text-slate-300 hidden sm:inline" />
-        <span className="text-muted-foreground hidden md:inline">Rotterdam Refinery</span>
+        <span className="text-muted-foreground hidden md:inline">Industrial Knowledge Platform</span>
         <ChevronRight className="size-3.5 text-slate-300 hidden md:inline" />
-        <span className="text-brand-deep truncate">Assembly Line 4A</span>
+        <span className="text-brand-deep truncate">Demo Workspace</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -322,31 +356,27 @@ function Topbar({ onOpenMobileNav }: { onOpenMobileNav: () => void }) {
           <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Ask IndusBrain — sensor, asset, procedure…"
-            className="pl-9 pr-16 py-1.5 bg-secondary rounded-full text-sm border-none focus:outline-none focus:ring-2 focus:ring-brand-primary/25 w-72 xl:w-80 transition-all placeholder:text-muted-foreground"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && query.trim()) {
+                onSearch(query.trim());
+                setQuery("");
+              }
+            }}
+            placeholder="Ask about maintenance procedures, equipment, or compliance..."
+            className="pl-9 pr-4 py-1.5 bg-secondary rounded-full text-sm border-none focus:outline-none focus:ring-2 focus:ring-brand-primary/25 w-72 xl:w-80 transition-all placeholder:text-muted-foreground"
           />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-muted-foreground bg-card border border-border-subtle rounded px-1.5 py-0.5">
-            ⌘K
-          </kbd>
         </div>
-
-        <button
-          type="button"
-          className="relative size-9 grid place-items-center rounded-full hover:bg-secondary transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="size-4 text-brand-deep" />
-          <span className="absolute top-2 right-2 size-1.5 rounded-full bg-brand-accent" />
-        </button>
 
         <div className="flex items-center gap-2 pl-2 border-l border-border-subtle">
           <div className="size-9 rounded-full bg-gradient-to-br from-brand-primary to-brand-deep grid place-items-center text-white text-xs font-semibold">
-            EM
+            DB
           </div>
           <div className="hidden md:block leading-tight">
-            <p className="text-xs font-semibold">Elena Morales</p>
+            <p className="text-xs font-semibold">Demo User</p>
             <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-              Ops Engineer
+              Industrial Engineer
             </p>
           </div>
         </div>
@@ -363,9 +393,11 @@ interface ChatMessage {
 function FloatingAIAssistant({
   open,
   onOpenChange,
+  initialQuery,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialQuery: string;
 }) {
   const suggestions = [
     "Summarize today's critical alerts",
@@ -375,6 +407,49 @@ function FloatingAIAssistant({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    if (!open || !initialQuery) return;
+
+    const sendInitialQuery = async () => {
+      setInput(initialQuery);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "user",
+          content: initialQuery,
+        },
+      ]);
+
+      setLoading(true);
+
+      try {
+        const response = await askQuestion(initialQuery);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: response.answer,
+          },
+        ]);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Unable to contact AI service.",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+        setInput("");
+      }
+    };
+
+    sendInitialQuery();
+  }, [open, initialQuery]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
