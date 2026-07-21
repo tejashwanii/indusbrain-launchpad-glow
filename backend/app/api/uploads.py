@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import NoReturn
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status, BackgroundTasks
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -21,6 +21,7 @@ from app.services.indexing_service import (
     DocumentIndexingFailure,
     DocumentIndexingService,
 )
+from app.services.compliance_service import ComplianceService
 
 router = APIRouter(tags=["documents"])
 logger = get_logger("indusbrain.uploads")
@@ -123,7 +124,9 @@ def _raise_extraction_error(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    
 ) -> DocumentUploadResponse:
     """Store and validate a PDF document without further processing."""
 
@@ -178,6 +181,25 @@ async def upload_document(
                     "uploaded_filename": document.filename,
                 },
             )
+
+            # Schedule an asynchronous compliance analysis pass so the Compliance
+            # Center can surface fresh results after upload without blocking the
+            # HTTP response. Errors are logged within the task and do not affect
+            # the upload outcome.
+            def _run_compliance_analysis() -> None:
+                try:
+                    ComplianceService().analyze_compliance()
+                except Exception as err:  # pragma: no cover - best-effort background task
+                    logger.exception(
+                        "post_upload_compliance_failed",
+                        extra={
+                            "document_id": document.document_id,
+                            "uploaded_filename": document.filename,
+                            "error": str(err),
+                        },
+                    )
+
+            background_tasks.add_task(_run_compliance_analysis)
 
         except DocumentIndexingFailure as error:
             logger.exception(

@@ -88,6 +88,16 @@ class ChromaDBService:
 
         self._collection = None
 
+    def has_indexed_chunks(self) -> bool:
+        """Return whether the configured collection contains indexed document chunks."""
+
+        try:
+            return int(self.get_collection().count()) > 0
+        except Exception as error:
+            raise ChromaDBCollectionError(
+                f"Unable to inspect collection '{COLLECTION_NAME}'."
+            ) from error
+
     def add_embeddings(self, chunk_embeddings: list[ChunkEmbedding]) -> None:
         """Insert chunk embeddings into the configured collection.
 
