@@ -7,6 +7,7 @@ import { getDocuments, type DocumentItem } from "@/services/documents";
 import { getCompliance, type ComplianceResponse } from "@/services/compliance";
 import { downloadReport } from "../services/report";
 import { toast } from "sonner";
+import dagre from "@dagrejs/dagre";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -35,6 +36,17 @@ import {
   type DashboardStats,
 } from "../services/dashboard";
 
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  Handle,
+  Position,
+} from "reactflow";
+
+import "reactflow/dist/style.css";
+
+
 export const Route = createFileRoute("/")({
   component: Dashboard,
 });
@@ -62,6 +74,9 @@ function Dashboard() {
   const [aiOpen, setAiOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(
+  () => localStorage.getItem("currentDocumentId")
+);
 
   // Scroll spy
   useEffect(() => {
@@ -134,12 +149,15 @@ function Dashboard() {
                 <CriticalComponents />
               </section>
               <section id="knowledge-graph" className="scroll-mt-4">
-                <KnowledgeGraphPreview />
+                <KnowledgeGraphPreview 
+                  documentId={currentDocumentId}/>
               </section>
             </div>
           </div>
           <section id="upload-documents" className="scroll-mt-4">
-            <UploadDocumentsCard />
+            <UploadDocumentsCard 
+              onUpload={setCurrentDocumentId}
+            />
           </section>
           <section id="compliance" className="scroll-mt-4">
             <ComplianceCard />
@@ -1176,7 +1194,12 @@ function CriticalComponents() {
   );
 }
 
-function UploadDocumentsCard() {
+function UploadDocumentsCard({
+  onUpload,
+}: {
+  onUpload: (documentId: string) => void;
+}) {
+  
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -1194,6 +1217,9 @@ function UploadDocumentsCard() {
 
     try {
       const response = await uploadDocument(file);
+
+      onUpload(response.document_id);
+      localStorage.setItem("currentDocumentId", response.document_id);
 
       setMessage(
         `✅ ${response.filename} uploaded and indexed successfully. Refreshing...`,
@@ -1337,7 +1363,102 @@ function ComplianceCard() {
   );
 }
 
-function KnowledgeGraphPreview() {
+const nodeTypes = {
+  custom: CustomNode,
+};
+
+function CustomNode({ data }: { data: any }) {
+  const colors: Record<string, string> = {
+    Equipment: "#2563eb",
+    Component: "#7c3aed",
+    "Maintenance Task": "#0f766e",
+    Procedure: "#0891b2",
+    Safety: "#dc2626",
+    Sensor: "#ca8a04",
+    Material: "#475569",
+  };
+
+  return (
+    <>
+      <Handle type="target" position={Position.Top} />
+
+      <div
+        style={{
+          background: colors[data.type] ?? "#2563eb",
+          color: "white",
+          borderRadius: "12px",
+          padding: "8px 12px",
+          minWidth: "110px",
+          textAlign: "center",
+          fontWeight: 600,
+          fontSize: "14px",
+          boxShadow: "0 8px 20px rgba(37,99,235,.25)",
+        }}
+      >
+        <div>{data.label}</div>
+
+        <div
+          style={{
+            fontSize: "9px",
+            opacity: 0.75,
+            marginTop: 4,
+          }}
+        >
+          {data.type}
+        </div>
+      </div>
+
+      <Handle type="source" position={Position.Bottom} />
+    </>
+  );
+}
+
+const getLayoutedElements = (nodes: any[], edges: any[]) => {
+  const dagreGraph = new dagre.graphlib.Graph();
+
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({
+    rankdir: "TB",
+    ranksep: 40,
+    nodesep: 20,
+  });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, {
+      width: 150,
+      height: 70,
+    });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  return {
+    nodes: nodes.map((node) => {
+      const position = dagreGraph.node(node.id);
+
+      return {
+        ...node,
+        position: {
+          x: position.x - 75,
+          y: position.y - 35,
+        },
+      };
+    }),
+    edges,
+  };
+};
+
+interface KnowledgeGraphPreviewProps {
+  documentId: string | null;
+}
+
+function KnowledgeGraphPreview({
+  documentId,
+}: KnowledgeGraphPreviewProps) {
   const [graph, setGraph] = useState<any>(null);
   const width = 400;
   const height = 400;
@@ -1346,9 +1467,10 @@ function KnowledgeGraphPreview() {
 
   useEffect(() => {
   async function loadGraph() {
+    if (!documentId) return;
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/knowledge-graph/60e8aeba-760f-46f2-9e6e-a1cb2858195c"
+        `http://127.0.0.1:8000/knowledge-graph/${documentId}`
       );
 
       const data = await response.json();
@@ -1360,7 +1482,7 @@ function KnowledgeGraphPreview() {
   }
 
   loadGraph();
-}, []);
+}, [documentId]);
 
 console.log(graph);
 
@@ -1405,6 +1527,26 @@ const edges: [string, string][] = graph
   ? graph.edges.map((edge: any) => [edge.source, edge.target] as [string, string])
   : defaultEdges;
 
+  const flowNodes = nodes.map((node) => ({
+  id: node.id,
+  position: { x: 0, y: 0 },
+  data: {
+    label: node.label,
+    type: graph?.nodes.find((n: any) => n.id === node.id)?.type,
+  },
+  type: "custom",
+}));
+
+const flowEdges = edges.map(([source, target], index) => ({
+  id: `edge-${index}`,
+  source,
+  target,
+}));
+
+const { nodes: layoutedNodes, edges: layoutedEdges } =
+  getLayoutedElements(flowNodes, flowEdges);
+
+
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
   const fillFor = (tone: Node["tone"]) =>
     tone === "core"
@@ -1431,82 +1573,25 @@ const edges: [string, string][] = graph
         </span>
       </header>
       <div className="relative">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full aspect-square"
-          role="img"
-          aria-label="Knowledge graph preview showing IndusBrain domain clusters"
+      <div style={{ width: "100%", height: 450 }}>
+        <ReactFlow
+          nodeTypes={nodeTypes}
+          nodes={layoutedNodes}
+          edges={layoutedEdges}
+          fitView
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          panOnScroll={false}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          panOnDrag={false}
+          preventScrolling={false}
+          className="pointer-events-auto"
         >
-          <defs>
-            <pattern id="kg-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-              <path
-                d="M 24 0 L 0 0 0 24"
-                fill="none"
-                stroke="var(--border-subtle)"
-                strokeWidth="0.5"
-                opacity="0.6"
-              />
-            </pattern>
-            <radialGradient id="kg-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="var(--brand-primary)" stopOpacity="0.18" />
-              <stop offset="100%" stopColor="var(--brand-primary)" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <rect width={width} height={height} fill="url(#kg-grid)" />
-          <circle cx={cx} cy={cy} r={150} fill="url(#kg-glow)" />
-
-          {edges.map(([a, b], i) => {
-            const na = byId[a];
-            const nb = byId[b];
-            return (
-              <line
-                key={i}
-                x1={na.x}
-                y1={na.y}
-                x2={nb.x}
-                y2={nb.y}
-                stroke="var(--brand-primary)"
-                strokeOpacity="0.35"
-                strokeWidth="1"
-              />
-            );
-          })}
-
-          {nodes.map((n) => (
-            <g key={n.id}>
-              <circle
-                cx={n.x}
-                cy={n.y}
-                r={n.r}
-                fill={fillFor(n.tone)}
-                stroke={strokeFor(n.tone)}
-                strokeWidth={n.tone === "muted" ? 1.5 : 2}
-              />
-              {n.tone === "core" && (
-                <circle
-                  cx={n.x}
-                  cy={n.y}
-                  r={n.r + 6}
-                  fill="none"
-                  stroke="var(--brand-primary)"
-                  strokeOpacity="0.4"
-                  strokeDasharray="3 3"
-                />
-              )}
-              <text
-                x={n.x}
-                y={n.y + 3}
-                textAnchor="middle"
-                fontSize={n.tone === "core" ? 9 : 7}
-                fontFamily="var(--font-mono)"
-                fontWeight={n.tone === "core" ? 700 : 500}
-                fill={textFill(n.tone)}
-              >
-                {n.label}
-              </text>
-            </g>
-          ))}
-        </svg>
+          <Background />
+        </ReactFlow>
+      </div>
         <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-brand-deep via-brand-deep/70 to-transparent text-white">
           <div className="space-y-1">
             <div>
