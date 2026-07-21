@@ -1196,8 +1196,12 @@ function UploadDocumentsCard() {
       const response = await uploadDocument(file);
 
       setMessage(
-        `✅ ${response.filename} uploaded and indexed successfully.`,
+        `✅ ${response.filename} uploaded and indexed successfully. Refreshing...`,
       );
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch {
       setMessage("❌ Upload failed.");
     } finally {
