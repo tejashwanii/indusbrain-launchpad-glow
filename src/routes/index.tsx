@@ -1473,6 +1473,11 @@ function KnowledgeGraphPreview({
         `http://127.0.0.1:8000/knowledge-graph/${documentId}`
       );
 
+      if (!response.ok) {
+        setGraph(null);
+        return;
+      }
+
       const data = await response.json();
 
       setGraph(data);
@@ -1508,7 +1513,8 @@ console.log(graph);
 
 const radius = 120;
 
-const nodes: Node[] = graph
+const nodes: Node[] = 
+  graph?.nodes
   ? graph.nodes.map((node: any, index: number) => {
       const angle = (2 * Math.PI * index) / graph.nodes.length;
 
@@ -1523,7 +1529,8 @@ const nodes: Node[] = graph
     })
   : defaultNodes;
 
-const edges: [string, string][] = graph
+const edges: [string, string][] = 
+  graph?.edges
   ? graph.edges.map((edge: any) => [edge.source, edge.target] as [string, string])
   : defaultEdges;
 
