@@ -1,0 +1,31 @@
+{
+  "nodes": [
+    {
+      "id": "Pump P-101",
+      "label": "Pump P-101",
+      "type": "Equipment"
+    },
+    {
+      "id": "Bearing",
+      "label": "Bearing",
+      "type": "Component"
+    },
+    {
+      "id": "Lubrication",
+      "label": "Lubrication",
+      "type": "Maintenance Task"
+    }
+  ],
+  "edges": [
+    {
+      "source": "Pump P-101",
+      "target": "Bearing",
+      "label": "contains"
+    },
+    {
+      "source": "Lubrication",
+      "target": "Bearing",
+      "label": "maintains"
+    }
+  ]
+}

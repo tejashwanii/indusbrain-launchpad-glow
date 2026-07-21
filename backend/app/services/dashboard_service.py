@@ -1,9 +1,9 @@
 from pathlib import Path
+import json
 
 from app.core.config import settings
 from app.schemas.dashboard import DashboardStats
 from app.services.chromadb_service import ChromaDBService
-import json
 
 
 class DashboardService:
@@ -15,12 +15,20 @@ class DashboardService:
 
         upload_dir = Path(settings.UPLOAD_DIRECTORY)
 
-        documents = len(list(upload_dir.glob("*.pdf")))
+        metadata_file = upload_dir / "metadata.json"
+
+        if metadata_file.exists():
+            with metadata_file.open("r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            documents = len(metadata)
+        else:
+            documents = 0
 
         try:
             chunks = self._chroma.get_collection().count()
         except Exception:
             chunks = 0
+
         stats_file = upload_dir / "stats.json"
 
         ai_queries = 0
@@ -36,6 +44,7 @@ class DashboardService:
                 average_response_time = (
                     f"{data.get('total_response_time', 0) / ai_queries:.2f}s"
                 )
+
         stats = DashboardStats(
             documents_indexed=documents,
             indexed_chunks=chunks,

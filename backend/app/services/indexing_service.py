@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.logging import get_logger
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,7 +10,9 @@ from app.services.chunking_service import chunk_document
 from app.services.chromadb_service import ChromaDBService
 from app.services.embedding_service import ChunkEmbedding, EmbeddingService
 from app.services.pdf_service import extract_pdf_text
+from app.services.knowledge_graph_service import KnowledgeGraphService
 
+logger = get_logger("indusbrain.indexing")
 
 class DocumentIndexingError(Exception):
     """Base exception for document indexing failures."""
@@ -72,6 +75,20 @@ class DocumentIndexingService:
 
         try:
             extraction_result = extract_pdf_text(path)
+
+            graph_service = KnowledgeGraphService()
+
+            try:
+                graph_service.generate(
+                    extraction_result.full_text,
+                    path.stem,
+                )
+            except Exception as e:
+                logger.warning(
+                    "Knowledge graph generation skipped: %s",
+                    e,
+                )
+
             chunks = chunk_document(extraction_result.full_text)
             embeddings = self._embedding_service.embed_chunks(chunks)
             self._chromadb_service.add_embeddings(embeddings)

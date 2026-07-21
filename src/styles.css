@@ -106,3 +106,21 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
+
+.react-flow {
+  cursor: default !important;
+}
+
+.react-flow__pane {
+  cursor: default !important;
+}
+
+.react-flow__node {
+  cursor: default !important;
+}
+.react-flow__handle {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border: none;
+}
