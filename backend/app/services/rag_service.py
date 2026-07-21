@@ -37,7 +37,9 @@ class RAGService:
     ) -> None:
         self._search_service = search_service or SemanticSearchService()
         self._prompt_builder = prompt_builder or PromptBuilder()
-        self._gemini_client = gemini_client or GeminiClient()
+        # Defer client initialization until generation so retrieval-only flows and
+        # availability fallbacks do not prevent the API application from starting.
+        self._gemini_client = gemini_client
 
     def answer_question(
         self,
@@ -105,4 +107,5 @@ class RAGService:
         if not prompt.strip():
             raise ValueError("Generated prompt must not be empty.")
 
-        return self._gemini_client.generate_response(prompt)
+        gemini_client = self._gemini_client or GeminiClient()
+        return gemini_client.generate_response(prompt)

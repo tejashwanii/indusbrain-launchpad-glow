@@ -4,6 +4,7 @@ import { askQuestion } from "../services/chat";
 import { getDiagnostics, presentInsight, type DiagnosticInsight } from "../services/diagnostic";
 import { uploadDocument } from "../services/upload";
 import { getDocuments, type DocumentItem } from "@/services/documents";
+import { getCompliance, type ComplianceResponse } from "@/services/compliance";
 import { downloadReport } from "../services/report";
 import { toast } from "sonner";
 import {
@@ -1269,12 +1270,24 @@ function UploadDocumentsCard() {
 }
 
 function ComplianceCard() {
-  const items = [
-    { name: "ISO 55000 · Asset Management", score: 98, tone: "ok" as const },
-    { name: "IEC 61511 · Functional Safety", score: 95, tone: "ok" as const },
-    { name: "OSHA 1910 · Process Safety", score: 88, tone: "warn" as const },
-    { name: "ATEX 2014/34/EU", score: 92, tone: "ok" as const },
-  ];
+  const [assessment, setAssessment] = useState<ComplianceResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getCompliance()
+      .then((payload) => active && setAssessment(payload))
+      .catch(() => active && setAssessment({
+        overall: 0,
+        standards: [],
+        message: "Compliance analysis is temporarily unavailable. Please try again later.",
+      }))
+      .finally(() => active && setLoading(false));
+
+    return () => { active = false; };
+  }, []);
+
+  const standards = assessment?.standards ?? [];
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -1282,33 +1295,54 @@ function ComplianceCard() {
           <ShieldCheck className="size-4 text-brand-primary" />
           <h3 className="font-bold text-sm">Compliance Center</h3>
         </div>
-        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          Overall · 96.8%
-        </span>
+        {standards.length > 0 && (
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+            Overall · {assessment?.overall != null ? `${assessment?.overall}%` : "—"}
+          </span>
+        )}
       </div>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Generating compliance assessment…</p>
+      ) : standards.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {assessment?.message ?? "No documents uploaded. Upload industrial documents to generate an AI-powered compliance assessment."}
+        </p>
+      ) : (
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {items.map((i) => {
-          const bar = i.tone === "warn" ? "bg-brand-accent/80" : "bg-success";
+        {standards.map((standard) => {
+          const isNotEvaluated = standard.status === "Not Evaluated";
+          const barClass = isNotEvaluated ? "bg-muted-foreground/30" : /needs review/i.test(standard.status) ? "bg-brand-accent/80" : "bg-success";
           return (
             <li
-              key={i.name}
+              key={standard.name}
               className="rounded-lg border border-border-subtle p-3 bg-secondary/30"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-brand-deep truncate">
-                  {i.name}
+                  {standard.name}
                 </p>
                 <span className="text-[10px] font-mono font-bold text-brand-deep">
-                  {i.score}%
+                  {standard.score != null ? `${standard.score}%` : "—"}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 w-full bg-card rounded-full overflow-hidden">
-                <div className={`h-full ${bar}`} style={{ width: `${i.score}%` }} />
+              <p className="mt-1 text-xs text-muted-foreground">{standard.reason}</p>
+              {!isNotEvaluated && (
+                <div className="mt-2 h-1.5 w-full bg-card rounded-full overflow-hidden">
+                  <div className={`h-full ${barClass}`} style={{ width: `${standard.score != null ? standard.score : 0}%` }} />
+                </div>
+              )}
+              <div className="mt-2">
+                {isNotEvaluated ? (
+                  <span className="text-[10px] inline-flex items-center gap-2 px-2 py-1 rounded-full bg-gray-200 text-gray-700">Not Evaluated</span>
+                ) : (
+                  <span className="text-[10px] inline-flex items-center gap-2 px-2 py-1 rounded-full bg-success/10 text-success">{standard.status}</span>
+                )}
               </div>
             </li>
           );
         })}
       </ul>
+      )}
     </section>
   );
 }

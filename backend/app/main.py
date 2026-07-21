@@ -12,6 +12,7 @@ from app.api.reports import router as reports_router
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger, install_exception_hooks
 from app.api.dashboard import router as dashboard_router
+from app.api.compliance import router as compliance_router
 
 configure_logging()
 install_exception_hooks()
@@ -66,6 +67,7 @@ app.include_router(dashboard_router)
 app.include_router(documents_router)
 app.include_router(diagnostics_router)
 app.include_router(reports_router)
+app.include_router(compliance_router)
 
 
 @app.middleware("http")
