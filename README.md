@@ -24,7 +24,7 @@ IndusBrain AI addresses this challenge by centralizing industrial knowledge into
 
 #  Key Features
 
-### 📄 Universal Document Ingestion
+###  Universal Document Ingestion
 - Upload PDFs and industrial documents
 - Automatic document parsing
 - Intelligent document indexing
