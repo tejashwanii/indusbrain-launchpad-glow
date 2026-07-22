@@ -52,7 +52,10 @@ class ChromaDBService:
         """Create and return the configured Chroma collection."""
 
         try:
-            collection = self._get_client().create_collection(name=COLLECTION_NAME)
+            collection = self._get_client().create_collection(
+                name=COLLECTION_NAME,
+                metadata={"hnsw:space": "cosine"},
+            )
         except Exception as error:
             raise ChromaDBCollectionError(
                 f"Unable to create Chroma collection '{COLLECTION_NAME}'."
@@ -118,10 +121,15 @@ class ChromaDBService:
         documents = [embedding.text for embedding in chunk_embeddings]
         embeddings = [embedding.embedding for embedding in chunk_embeddings]
         metadatas = [
-            {"chunk_index": embedding.chunk_index} for embedding in chunk_embeddings
+            {
+                "chunk_index": embedding.chunk_index,
+                "document_name": embedding.document_name,
+            }
+            for embedding in chunk_embeddings
         ]
 
         try:
+            print(metadatas[0])
             collection.add(
                 ids=ids,
                 documents=documents,

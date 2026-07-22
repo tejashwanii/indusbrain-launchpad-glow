@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { askQuestion } from "../services/chat";
+import { askQuestion, ChatSource } from "../services/chat";
 import { getDiagnostics, presentInsight, type DiagnosticInsight } from "../services/diagnostic";
 import { uploadDocument } from "../services/upload";
 import { getDocuments, type DocumentItem } from "@/services/documents";
@@ -402,6 +402,9 @@ function Topbar({
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  confidence?: number;
+  confidenceLevel?: string;
+  sources?: ChatSource[];
 }
 
 function FloatingAIAssistant({
@@ -446,6 +449,10 @@ function FloatingAIAssistant({
           {
             role: "assistant",
             content: response.answer,
+            confidence: response.confidence,
+            confidenceLevel: response.confidence_level,
+            sources: response.sources,
+
           },
         ]);
       } catch {
@@ -489,6 +496,9 @@ function FloatingAIAssistant({
         {
           role: "assistant",
           content: response.answer,
+          confidence: response.confidence,
+          confidenceLevel: response.confidence_level,
+          sources: response.sources,
         },
       ]);
     } catch {
@@ -593,7 +603,30 @@ function FloatingAIAssistant({
                             : "bg-white/10 text-slate-200"
                         }`}
                       >
-                        {message.content}
+                        <div>{message.content}</div>
+
+                        {message.role === "assistant" && (
+                          <>
+                            {message.confidence !== undefined && (
+                              <div className="mt-3 border-t border-white/10 pt-2 text-xs text-slate-400">
+                                <span className="font-medium">Confidence:</span>{" "}
+                                {message.confidence}% ({message.confidenceLevel})
+                              </div>
+                            )}
+
+                            {message.sources && message.sources.length > 0 && (
+                              <div className="mt-2 text-xs text-slate-400">
+                                <div className="font-medium mb-1">Sources</div>
+
+                                {message.sources.map((source, index) => (
+                                  <div key={index} className="truncate">
+                                    📄 {source.document_name}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}

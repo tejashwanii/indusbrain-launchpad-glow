@@ -37,6 +37,7 @@ class ChunkEmbedding:
     chunk_index: int
     text: str
     embedding: list[float]
+    document_name: str = ""
 
 
 @lru_cache(maxsize=1)

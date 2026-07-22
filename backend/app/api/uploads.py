@@ -171,7 +171,8 @@ async def upload_document(
 
         try:
             indexing_service.index_document(
-                str(_stored_pdf_path(document.document_id))
+                str(_stored_pdf_path(document.document_id)),
+                document.filename,
             )
 
             logger.info(

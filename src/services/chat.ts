@@ -1,12 +1,15 @@
 export interface ChatSource {
   chunk_id: string;
   similarity_score: number;
+  document_name?: string;
   metadata: Record<string, unknown>;
 }
 
 export interface ChatResponse {
   question: string;
   answer: string;
+  confidence: number;
+  confidence_level: string;
   sources: ChatSource[];
 }
 
