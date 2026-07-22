@@ -44,10 +44,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return ChatResponse(
             question=response.question,
             answer=response.answer,
+            confidence=response.confidence,
+            confidence_level=response.confidence_level,
             sources=[
                 SourceChunk(
                     chunk_id=result.chunk_id,
                     similarity_score=result.similarity_score,
+                    document_name=result.metadata.get("document_name"),
                     metadata=result.metadata,
                 )
                 for result in response.search_results.results

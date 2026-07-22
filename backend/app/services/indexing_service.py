@@ -52,7 +52,11 @@ class DocumentIndexingService:
         self._embedding_service = embedding_service or EmbeddingService()
         self._chromadb_service = chromadb_service or ChromaDBService()
 
-    def index_document(self, pdf_path: str) -> IndexingResult:
+    def index_document(
+    self,
+    pdf_path: str,
+    document_name: str,
+) -> IndexingResult:
         """Run the full document indexing workflow for a PDF file.
 
         Args:
@@ -91,6 +95,16 @@ class DocumentIndexingService:
 
             chunks = chunk_document(extraction_result.full_text)
             embeddings = self._embedding_service.embed_chunks(chunks)
+            embeddings = [
+                ChunkEmbedding(
+                    chunk_id=embedding.chunk_id,
+                    chunk_index=embedding.chunk_index,
+                    text=embedding.text,
+                    embedding=embedding.embedding,
+                    document_name=document_name,
+                )
+                for embedding in embeddings
+            ]
             self._chromadb_service.add_embeddings(embeddings)
         except (DocumentIndexingError, ValueError) as error:
             raise DocumentIndexingFailure(f"Unable to index document '{path}'.") from error

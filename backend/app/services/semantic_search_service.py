@@ -80,6 +80,9 @@ class SemanticSearchService:
                 query_embeddings=[query_embedding],
                 n_results=top_k,
             )
+            print("\n========== CHROMA RESULTS ==========")
+            print(results)
+            print("===================================\n")
         except EmptyQueryError:
             raise
         except Exception as error:
