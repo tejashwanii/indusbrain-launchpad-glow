@@ -41,6 +41,8 @@ __pycache__/
 
 # ChromaDB
 data/chroma/
+backend/data/chroma/
+backend/graphs/
 *.sqlite3
 *.bin
 
