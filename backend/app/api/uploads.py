@@ -187,20 +187,20 @@ async def upload_document(
             # Center can surface fresh results after upload without blocking the
             # HTTP response. Errors are logged within the task and do not affect
             # the upload outcome.
-            def _run_compliance_analysis() -> None:
-                try:
-                    ComplianceService().analyze_compliance()
-                except Exception as err:  # pragma: no cover - best-effort background task
-                    logger.exception(
-                        "post_upload_compliance_failed",
-                        extra={
-                            "document_id": document.document_id,
-                            "uploaded_filename": document.filename,
-                            "error": str(err),
-                        },
-                    )
+            # def _run_compliance_analysis() -> None:
+            #     try:
+            #         ComplianceService().analyze_compliance()
+            #     except Exception as err:  # pragma: no cover - best-effort background task
+            #         logger.exception(
+            #             "post_upload_compliance_failed",
+            #             extra={
+            #                 "document_id": document.document_id,
+            #                 "uploaded_filename": document.filename,
+            #                 "error": str(err),
+            #             },
+            #         )
 
-            background_tasks.add_task(_run_compliance_analysis)
+            # background_tasks.add_task(_run_compliance_analysis)
 
         except DocumentIndexingFailure as error:
             logger.exception(

@@ -851,38 +851,55 @@ function Sparkline({ points, accent }: { points: number[]; accent?: boolean }) {
 
 function AssetFeed() {
   const [items, setItems] = useState<DiagnosticInsight[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  // useEffect(() => {
+  //   let active = true;
 
-    const loadDiagnostics = async () => {
-      setLoading(true);
-      setError(null);
-      setMessage(null);
+  //   const loadDiagnostics = async () => {
+  //     setLoading(true);
+  //     setError(null);
+  //     setMessage(null);
 
-      try {
-        const response = await getDiagnostics();
-        if (!active) return;
-        setItems(response.insights);
-        setMessage(response.message ?? null);
-      } catch (err) {
-        if (!active) return;
-        setError(err instanceof Error ? err.message : "Unable to load diagnostics.");
-        setItems([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
+  //     try {
+  //       const response = await getDiagnostics();
+  //       if (!active) return;
+  //       setItems(response.insights);
+  //       setMessage(response.message ?? null);
+  //     } catch (err) {
+  //       if (!active) return;
+  //       setError(err instanceof Error ? err.message : "Unable to load diagnostics.");
+  //       setItems([]);
+  //     } finally {
+  //       if (active) setLoading(false);
+  //     }
+  //   };
 
-    void loadDiagnostics();
+  //   void loadDiagnostics();
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  //   return () => {
+  //     active = false;
+  //   };
+  // }, []);
+
+  const generateDiagnostics = async () => {
+  setLoading(true);
+  setError(null);
+  setMessage(null);
+
+  try {
+    const response = await getDiagnostics();
+    setItems(response.insights);
+    setMessage(response.message ?? null);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Unable to load diagnostics.");
+    setItems([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
@@ -898,6 +915,13 @@ function AssetFeed() {
               : `${items.length} AI insights generated from your knowledge base`}
           </span>
         </div>
+        <button
+          onClick={generateDiagnostics}
+          disabled={loading}
+          className="rounded-lg bg-brand-primary px-2 py-1 text-white hover:bg-brand-primary/90 disabled:opacity-50"
+        >
+          {loading ? "Generating..." : "Generate AI Insights"}
+        </button>
       </header>
 
       {loading ? (
@@ -1320,23 +1344,43 @@ function UploadDocumentsCard({
 
 function ComplianceCard() {
   const [assessment, setAssessment] = useState<ComplianceResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    getCompliance()
-      .then((payload) => active && setAssessment(payload))
-      .catch(() => active && setAssessment({
-        overall: 0,
-        standards: [],
-        message: "Compliance analysis is temporarily unavailable. Please try again later.",
-      }))
-      .finally(() => active && setLoading(false));
+  // useEffect(() => {
+  //   let active = true;
+  //   getCompliance()
+  //     .then((payload) => active && setAssessment(payload))
+  //     .catch(() => active && setAssessment({
+  //       overall: 0,
+  //       standards: [],
+  //       message: "Compliance analysis is temporarily unavailable. Please try again later.",
+  //     }))
+  //     .finally(() => active && setLoading(false));
 
-    return () => { active = false; };
-  }, []);
+  //   return () => { active = false; };
+  // }, []);
 
   const standards = assessment?.standards ?? [];
+
+  const generateCompliance = async () => {
+  setLoading(true);
+
+  try {
+    const payload = await getCompliance();
+    setAssessment(payload);
+  } catch {
+    setAssessment({
+      overall: 0,
+      standards: [],
+      message:
+        "Compliance analysis is temporarily unavailable. Please try again later.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -1344,6 +1388,13 @@ function ComplianceCard() {
           <ShieldCheck className="size-4 text-brand-primary" />
           <h3 className="font-bold text-sm">Compliance Center</h3>
         </div>
+        <button
+          onClick={generateCompliance}
+          disabled={loading}
+          className="rounded-lg bg-brand-primary px-2 py-1 text-white hover:bg-brand-primary/90 disabled:opacity-50"
+        >
+          {loading ? "Analyzing..." : "Generate Compliance Report"}
+        </button>
         {standards.length > 0 && (
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
             Overall · {assessment?.overall != null ? `${assessment?.overall}%` : "—"}
@@ -1493,34 +1544,35 @@ function KnowledgeGraphPreview({
   documentId,
 }: KnowledgeGraphPreviewProps) {
   const [graph, setGraph] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const width = 400;
   const height = 400;
   const cx = width / 2;
   const cy = height / 2;
 
-  useEffect(() => {
-  async function loadGraph() {
-    if (!documentId) return;
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/knowledge-graph/${documentId}`
-      );
+//   useEffect(() => {
+//   async function loadGraph() {
+//     if (!documentId) return;
+//     try {
+//       const response = await fetch(
+//         `http://127.0.0.1:8000/knowledge-graph/${documentId}`
+//       );
 
-      if (!response.ok) {
-        setGraph(null);
-        return;
-      }
+//       if (!response.ok) {
+//         setGraph(null);
+//         return;
+//       }
 
-      const data = await response.json();
+//       const data = await response.json();
 
-      setGraph(data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
+//       setGraph(data);
+//     } catch (error) {
+//       console.error(error);
+//     }
+//   }
 
-  loadGraph();
-}, [documentId]);
+//   loadGraph();
+// }, [documentId]);
 
 console.log(graph);
 
@@ -1572,7 +1624,7 @@ const edges: [string, string][] =
   position: { x: 0, y: 0 },
   data: {
     label: node.label,
-    type: graph?.nodes.find((n: any) => n.id === node.id)?.type,
+    type: graph?.nodes?.find((n: any) => n.id === node.id)?.type,
   },
   type: "custom",
 }));
@@ -1600,6 +1652,31 @@ const { nodes: layoutedNodes, edges: layoutedEdges } =
     tone === "muted" ? "var(--border-subtle)" : fillFor(tone);
   const textFill = (tone: Node["tone"]) =>
     tone === "muted" ? "var(--brand-deep)" : "#ffffff";
+  
+  const generateKnowledgeGraph = async () => {
+  if (!documentId) return;
+
+  setLoading(true);
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/knowledge-graph/${documentId}`
+    );
+
+    if (!response.ok) {
+      setGraph(null);
+      return;
+    }
+
+    const data = await response.json();
+    setGraph(data);
+  } catch (error) {
+    console.error(error);
+    setGraph(null);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <section className="bg-card rounded-xl border border-border-subtle shadow-sm overflow-hidden">
@@ -1611,6 +1688,13 @@ const { nodes: layoutedNodes, edges: layoutedEdges } =
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
           Knowledge Extraction
         </span>
+        <button
+        onClick={generateKnowledgeGraph}
+        disabled={loading || !documentId}
+        className="rounded-lg bg-brand-primary px-2 py-1 text-white hover:bg-brand-primary/90 disabled:opacity-50"
+      >
+        {loading ? "Generating..." : "Generate Knowledge Graph"}
+      </button>
       </header>
       <div className="relative">
       <div style={{ width: "100%", height: 450 }}>
